@@ -51,7 +51,7 @@ if (fs.existsSync(eventsPath)) {
         const event = require(path.join(eventsPath, file));
         if (event.name && typeof event.execute === 'function') {
             // Pass agenda and client to events if needed
-            client.on(event.name, (...args) => event.execute(...args, client, agenda));
+            client.on(event.name, (...args) => event.execute(...args, client));
             console.log(`Loaded event: ${event.name}`);
         }
     }
