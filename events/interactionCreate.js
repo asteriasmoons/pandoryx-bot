@@ -1,7 +1,7 @@
 // interactionCreate.js
 const { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const EmbedModel = require('../models/Embed');
-const { buildEmbed } = require('../utils/embedEditorUI');
+const { buildEmbed } = require('../utils/embedEditorUi');
 
 module.exports = {
   name: 'interactionCreate',
