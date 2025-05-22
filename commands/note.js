@@ -1,6 +1,6 @@
 // commands/note.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const UserNote = require('../models/UserNote'); // Adjust if needed
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const UserNote = require('../models/UserNote');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -36,7 +36,18 @@ module.exports = {
           opt.setName('number').setDescription('Note number to remove (as shown in view)').setRequired(true)
         )
     ),
+
   async execute(interaction) {
+    // Admin-only check
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      const embed = new EmbedBuilder()
+        .setTitle('Permission Denied')
+        .setDescription('You must have the **Administrator** permission to use this command.')
+        .setColor(0xff4fa6);
+      await interaction.reply({ embeds: [embed], ephemeral: false });
+      return;
+    }
+
     const sub = interaction.options.getSubcommand();
     const user = interaction.options.getUser('user');
     const guildId = interaction.guild.id;
