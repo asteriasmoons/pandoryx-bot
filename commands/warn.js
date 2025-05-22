@@ -59,6 +59,27 @@ module.exports = {
       userWarns.warns.push({ reason, moderatorId: interaction.user.id });
       await userWarns.save();
 
+      // Try to DM the user
+      let dmSuccess = true;
+      try {
+        await user.send({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('You have been warned')
+              .setDescription(`You were warned in **${interaction.guild.name}**`)
+              .addFields(
+                { name: 'Reason', value: reason },
+                { name: 'Moderator', value: `<@${interaction.user.id}>` }
+              )
+              .setColor(0xff4fa6)
+              .setTimestamp()
+          ]
+        });
+      } catch (err) {
+        dmSuccess = false; // DM failed, user probably has DMs closed
+      }
+
+      // Reply to the admin
       const embed = new EmbedBuilder()
         .setTitle('User Warned')
         .setDescription(`<@${user.id}> has been warned!`)
@@ -68,6 +89,10 @@ module.exports = {
         )
         .setColor(0xff4fa6)
         .setTimestamp();
+
+      if (!dmSuccess) {
+        embed.setFooter({ text: 'Could not DM the user (DMs closed or blocked).' });
+      }
 
       await interaction.reply({ embeds: [embed], ephemeral: false });
     }
