@@ -4,8 +4,6 @@ const mongoose = require('mongoose');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
-const UserKick = require('./models/UserKick'); // Adjust path as needed
-const modLogger = require('./modLogger');
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
