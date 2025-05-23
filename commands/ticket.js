@@ -119,58 +119,48 @@ async function execute(interaction) {
   }
 
   // /ticket panel_send
-  if (sub === 'panel_send') {
+	if (sub === 'panel_send') {
     const name = interaction.options.getString('name');
     const panel = await TicketPanel.findOne({ name });
     if (!panel) {
-      return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('Panel Not Found')
-            .setDescription(`No panel found with the name \`${name}\`.`)
-            .setColor(0x8102ff)
-        ]
-      });
-    }
-    if (panel.channelId && panel.messageId) {
-      return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('Panel Already Sent')
-            .setDescription(`Panel \`${name}\` has already been sent.`)
-            .setColor(0x8102ff)
-        ]
-      });
-    }
+    return interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('Panel Not Found')
+          .setDescription(`No panel found with the name \`${name}\`.`)
+          .setColor(0x8102ff)
+      ]
+    });
+  }
+
+  // --- REMOVED THE "already sent" check here ---
 
     const embed = new EmbedBuilder()
-      .setTitle(panel.embed.title)
-      .setDescription(panel.embed.description)
-      .setColor(panel.embed.color);
+    .setTitle(panel.embed.title)
+    .setDescription(panel.embed.description)
+    .setColor(panel.embed.color);
 
     const button = new ButtonBuilder()
-      .setCustomId(`open_ticket_modal:${name}`)
-      .setLabel('Open Ticket')
-      .setStyle(ButtonStyle.Secondary)
-	  .setEmoji('1368589310940413952');
+    .setCustomId(`open_ticket_modal:${name}`)
+    .setLabel('Open Ticket')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('1368589310940413952');
 
     const row = new ActionRowBuilder().addComponents(button);
 
     const msg = await interaction.channel.send({ embeds: [embed], components: [row] });
 
-    panel.channelId = interaction.channel.id;
-    panel.messageId = msg.id;
-    await panel.save();
+  // --- REMOVED saving channelId/messageId so you can send it unlimited times ---
 
-    return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('Panel Sent')
-          .setDescription(`Ticket panel \`${name}\` has been sent successfully!`)
-          .setColor(0x8102ff)
-      ]
-    });
-  }
+  return interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle('Panel Sent')
+        .setDescription(`Ticket panel \`${name}\` has been sent successfully!`)
+        .setColor(0x8102ff)
+    ]
+  });
+}
 
   // /ticket panel_edit
   if (sub === 'panel_edit') {
