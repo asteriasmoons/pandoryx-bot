@@ -151,7 +151,7 @@ async function execute(interaction) {
     const button = new ButtonBuilder()
       .setCustomId(`open_ticket_modal:${name}`)
       .setLabel('Open Ticket')
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
 	  .setEmoji('1368589310940413952');
 
     const row = new ActionRowBuilder().addComponents(button);
