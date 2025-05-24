@@ -202,7 +202,7 @@ module.exports = {
               new EmbedBuilder()
                 .setTitle('Permission Denied')
                 .setDescription('Only staff can claim tickets.')
-                .setColor(0xED4245)
+                .setColor(0x663399)
             ]
           });
         }
@@ -224,7 +224,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Ticket Claimed')
               .setDescription(`Ticket has been claimed by <@${interaction.user.id}>.`)
-              .setColor(0x57F287)
+              .setColor(0x663399)
           ]
         });
         return;
@@ -238,7 +238,7 @@ module.exports = {
               new EmbedBuilder()
                 .setTitle('Permission Denied')
                 .setDescription('Only staff can close tickets.')
-                .setColor(0xED4245)
+                .setColor(0x663399)
             ]
           });
         }
@@ -253,7 +253,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Ticket Closed')
               .setDescription('This ticket has been closed. Staff can still view this channel.')
-              .setColor(0xED4245)
+              .setColor(0x663399)
           ]
         });
         return;
@@ -267,7 +267,7 @@ module.exports = {
               new EmbedBuilder()
                 .setTitle('Permission Denied')
                 .setDescription('Only staff can delete tickets.')
-                .setColor(0xED4245)
+                .setColor(0x663399)
             ]
           });
         }
@@ -318,7 +318,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Ticket Deleted')
               .setDescription('This ticket channel will be deleted in 5 seconds.')
-              .setColor(0xED4245)
+              .setColor(0x663399)
           ]
         });
         setTimeout(() => {
