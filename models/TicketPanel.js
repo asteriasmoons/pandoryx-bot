@@ -8,6 +8,7 @@ const TicketPanelSchema = new mongoose.Schema({
     title: String,
     description: String,
     color: String,
+	emoji: String,
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

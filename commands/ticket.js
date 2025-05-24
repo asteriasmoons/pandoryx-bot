@@ -12,7 +12,6 @@ const {
   ChannelType,
 } = require('discord.js');
 
-// Replace with your actual schema imports
 const TicketPanel = require('../models/TicketPanel');
 const TicketInstance = require('../models/TicketInstance');
 const GuildSetting = require('../models/GuildSetting');
@@ -40,7 +39,10 @@ const data = new SlashCommandBuilder()
             opt.setName('description').setDescription('Embed description').setRequired(true)
           )
           .addStringOption(opt =>
-            opt.setName('color').setDescription('Embed color (hex, e.g. #5865F)').setRequired(true)
+            opt.setName('color').setDescription('Embed color (hex, e.g. #5865F2)').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('emoji').setDescription('Emoji for the button (unicode or emoji ID)').setRequired(false)
           )
       )
       .addSubcommand(sub =>
@@ -66,6 +68,9 @@ const data = new SlashCommandBuilder()
           )
           .addStringOption(opt =>
             opt.setName('color').setDescription('Embed color (hex, e.g. #8102ff)').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('emoji').setDescription('Emoji for the button (unicode or emoji ID)').setRequired(false)
           )
       )
       .addSubcommand(sub =>
@@ -93,15 +98,25 @@ const data = new SlashCommandBuilder()
               .setRequired(true)
           )
       )
+	  .addSubcommand(sub =>
+  		sub
+    	.setName('staffrole')
+    	.setDescription('Set the staff role that can see all tickets')
+    		.addRoleOption(opt =>
+      	opt.setName('role')
+        .setDescription('The staff role')
+        .setRequired(true)
+      )
+	)
   );
 
 // 2. Command Handler
 async function execute(interaction) {
-	 // Get subcommand group and subcommand
- 	const group = interaction.options.getSubcommandGroup(false);
- 	const sub = interaction.options.getSubcommand();
+  // Get subcommand group and subcommand
+  const group = interaction.options.getSubcommandGroup(false);
+  const sub = interaction.options.getSubcommand();
 
-	if (group === 'config' && sub === 'transcript') {
+  if (group === 'config' && sub === 'staffrole') {
   if (
     !(
       interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
@@ -114,17 +129,43 @@ async function execute(interaction) {
     });
   }
 
-  const channel = interaction.options.getChannel('channel');
+  const role = interaction.options.getRole('role');
   await GuildSetting.findOneAndUpdate(
     { guildId: interaction.guild.id },
-    { transcriptChannelId: channel.id },
+    { staffRoleId: role.id },
     { upsert: true }
   );
   return interaction.reply({
-    content: `Transcript channel set to ${channel}.`,
+    content: `Staff role set to ${role}. This role will be able to view all tickets.`,
     ephemeral: true
   });
 }
+
+	// /ticket config transcript
+  	if (group === 'config' && sub === 'transcript') {
+    if (
+      !(
+        interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+        interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+      )
+    ) {
+      return interaction.reply({
+        content: "You don't have permission to configure the ticket system. (Requires Manage Server or Administrator)",
+        ephemeral: true
+      });
+    }
+
+    const channel = interaction.options.getChannel('channel');
+    await GuildSetting.findOneAndUpdate(
+      { guildId: interaction.guild.id },
+      { transcriptChannelId: channel.id },
+      { upsert: true }
+    );
+    return interaction.reply({
+      content: `Transcript channel set to ${channel}.`,
+      ephemeral: true
+    });
+  }
 
   // Permission check for panel management (create, edit, delete)
   if (
@@ -147,6 +188,7 @@ async function execute(interaction) {
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description');
     const color = interaction.options.getString('color');
+    const emoji = interaction.options.getString('emoji');
 
     if (await TicketPanel.findOne({ name })) {
       return interaction.reply({
@@ -155,13 +197,15 @@ async function execute(interaction) {
             .setTitle('Panel Already Exists')
             .setDescription(`A panel with the name \`${name}\` already exists.`)
             .setColor(0x8102ff)
-        ]
+        ],
+        ephemeral: true
       });
     }
 
     await TicketPanel.create({
       name,
-      embed: { title, description, color }
+      embed: { title, description, color },
+      emoji,
     });
 
     return interaction.reply({
@@ -170,7 +214,8 @@ async function execute(interaction) {
           .setTitle('Panel Created')
           .setDescription(`Panel \`${name}\` created and ready to send!`)
           .setColor(0x8102ff)
-      ]
+      ],
+      ephemeral: true
     });
   }
 
@@ -185,7 +230,8 @@ async function execute(interaction) {
             .setTitle('Panel Not Found')
             .setDescription(`No panel found with the name \`${name}\`.`)
             .setColor(0x8102ff)
-        ]
+        ],
+        ephemeral: true
       });
     }
 
@@ -197,8 +243,9 @@ async function execute(interaction) {
     const button = new ButtonBuilder()
       .setCustomId(`open_ticket_modal:${name}`)
       .setLabel('Open Ticket')
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('1368589310940413952');
+      .setStyle(ButtonStyle.Secondary);
+
+    if (panel.emoji) button.setEmoji(panel.emoji);
 
     const row = new ActionRowBuilder().addComponents(button);
 
@@ -211,6 +258,7 @@ async function execute(interaction) {
           .setDescription(`Ticket panel \`${name}\` has been sent successfully!`)
           .setColor(0x8102ff)
       ]
+      // This is intentionally NOT ephemeral so staff can see confirmation in the channel
     });
   }
 
@@ -220,6 +268,7 @@ async function execute(interaction) {
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description');
     const color = interaction.options.getString('color');
+    const emoji = interaction.options.getString('emoji');
 
     const panel = await TicketPanel.findOne({ name });
     if (!panel) {
@@ -229,26 +278,38 @@ async function execute(interaction) {
             .setTitle('Panel Not Found')
             .setDescription(`No panel found with the name \`${name}\`.`)
             .setColor(0x8102ff)
-        ]
+        ],
+        ephemeral: true
       });
     }
 
-    // Update DB
+    // Update the panel fields
     panel.embed = { title, description, color };
+    if (emoji !== null) panel.emoji = emoji;
     await panel.save();
 
-    // Edit the message if it exists
+    // Update the Discord message if it exists
     if (panel.channelId && panel.messageId) {
       try {
         const channel = await interaction.guild.channels.fetch(panel.channelId);
         const msg = await channel.messages.fetch(panel.messageId);
 
+        // Rebuild the embed and button (with emoji)
         const embed = new EmbedBuilder()
           .setTitle(title)
           .setDescription(description)
           .setColor(color);
 
-        await msg.edit({ embeds: [embed] });
+        const button = new ButtonBuilder()
+          .setCustomId(`open_ticket_modal:${name}`)
+          .setLabel('Open Ticket')
+          .setStyle(ButtonStyle.Secondary);
+
+        if (panel.emoji) button.setEmoji(panel.emoji);
+
+        const row = new ActionRowBuilder().addComponents(button);
+
+        await msg.edit({ embeds: [embed], components: [row] });
       } catch {
         // If message or channel is gone, ignore for now
       }
@@ -260,7 +321,8 @@ async function execute(interaction) {
           .setTitle('Panel Updated')
           .setDescription(`Panel \`${name}\` has been updated.`)
           .setColor(0x8102ff)
-      ]
+      ],
+      ephemeral: true
     });
   }
 
@@ -275,7 +337,8 @@ async function execute(interaction) {
             .setTitle('Panel Not Found')
             .setDescription(`No panel found with the name \`${name}\`.`)
             .setColor(0x8102ff)
-        ]
+        ],
+        ephemeral: true
       });
     }
 
@@ -298,7 +361,8 @@ async function execute(interaction) {
           .setTitle('Panel Deleted')
           .setDescription(`Panel \`${name}\` has been deleted.`)
           .setColor(0x8102ff)
-      ]
+      ],
+      ephemeral: true
     });
   }
 }
@@ -329,21 +393,33 @@ async function handleComponent(interaction) {
     const issue = interaction.fields.getTextInputValue('issue');
 
     // Create ticket channel
-    const ticketChannel = await interaction.guild.channels.create({
-      name: `ticket-${interaction.user.username}`.toLowerCase(),
-      type: ChannelType.GuildText,
-      permissionOverwrites: [
-        {
-          id: interaction.guild.roles.everyone,
-          deny: [PermissionFlagsBits.ViewChannel],
-        },
-        {
-          id: interaction.user.id,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-        },
-        // Add your staff role here if needed, or let mods/admins see all tickets
-      ],
-    });
+	// Fetch staff role from DB (if set)
+      const guildSettings = await GuildSetting.findOne({ guildId: interaction.guild.id });
+      const staffRoleId = guildSettings?.staffRoleId;
+
+       const permissionOverwrites = [
+     {
+        id: interaction.guild.roles.everyone,
+        deny: [PermissionFlagsBits.ViewChannel],
+     },
+  	 {
+    	id: interaction.user.id,
+    	allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+  	  },
+	];
+
+		if (staffRoleId) {
+  		permissionOverwrites.push({
+    	id: staffRoleId,
+    	allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+  	  });
+	}
+
+	    const ticketChannel = await interaction.guild.channels.create({
+  		name: `ticket-${interaction.user.username}`.toLowerCase(),
+  		type: ChannelType.GuildText,
+  		permissionOverwrites,
+	});
 
     await TicketInstance.create({
       ticketId: ticketChannel.id,
@@ -370,7 +446,8 @@ async function handleComponent(interaction) {
           .setTitle('Ticket Created')
           .setDescription(`Your ticket has been created: <#${ticketChannel.id}>`)
           .setColor(0x8102ff)
-      ]
+      ],
+      ephemeral: true
     });
   }
 }
