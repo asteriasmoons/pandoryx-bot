@@ -281,8 +281,11 @@ module.exports = {
           const attachment = new AttachmentBuilder(transcriptBuffer, { name: `transcript-${interaction.channel.name}.txt` });
 
           // Send to log channel
-          const logChannelId = '1375532030674337812'; // <-- Replace with your log channel ID
-          const logChannel = interaction.guild.channels.cache.get(logChannelId);
+          const GuildSetting = require('../models/GuildSetting');
+          const settings = await GuildSetting.findOne({ guildId: interaction.guild.id });
+          const logChannelId = settings?.transcriptChannelId;
+          const logChannel = logChannelId ? interaction.guild.channels.cache.get(logChannelId) : null;
+          
           if (logChannel) {
             await logChannel.send({
               content: `Transcript for ticket ${interaction.channel.name}:`,

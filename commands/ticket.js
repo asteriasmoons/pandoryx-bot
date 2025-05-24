@@ -1,5 +1,4 @@
 // ticket.js
-
 const {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -16,77 +15,134 @@ const {
 // Replace with your actual schema imports
 const TicketPanel = require('../models/TicketPanel');
 const TicketInstance = require('../models/TicketInstance');
-
-// --- STAFF ROLE LOGIC ---
-function getStaffRoleId(guild) {
-  // Use role name or ID here:
-const staffRoleId = "1368040112277032980"; // <-- CHANGE THIS TO YOUR STAFF ROLE NAME OR ID
-  let role = guild.roles.cache.find(r => r.name === staffRoleName) ||
-             guild.roles.cache.get(staffRoleName);
-  return role ? role.id : null;
-}
+const GuildSetting = require('../models/GuildSetting');
 
 // 1. Slash Command Data (for registration)
 const data = new SlashCommandBuilder()
   .setName('ticket')
   .setDescription('Ticket system commands')
-  .addSubcommand(sub =>
-    sub
-      .setName('panel_create')
-      .setDescription('Create a ticket panel config')
-      .addStringOption(opt =>
-        opt.setName('name').setDescription('Panel name').setRequired(true)
+  // PANEL GROUP
+  .addSubcommandGroup(group =>
+    group
+      .setName('panel')
+      .setDescription('Ticket panel management')
+      .addSubcommand(sub =>
+        sub
+          .setName('create')
+          .setDescription('Create a ticket panel config')
+          .addStringOption(opt =>
+            opt.setName('name').setDescription('Panel name').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('title').setDescription('Embed title').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('description').setDescription('Embed description').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('color').setDescription('Embed color (hex, e.g. #5865F)').setRequired(true)
+          )
       )
-      .addStringOption(opt =>
-        opt.setName('title').setDescription('Embed title').setRequired(true)
+      .addSubcommand(sub =>
+        sub
+          .setName('send')
+          .setDescription('Send a ticket panel')
+          .addStringOption(opt =>
+            opt.setName('name').setDescription('Panel name').setRequired(true)
+          )
       )
-      .addStringOption(opt =>
-        opt.setName('description').setDescription('Embed description').setRequired(true)
+      .addSubcommand(sub =>
+        sub
+          .setName('edit')
+          .setDescription('Edit a ticket panel config')
+          .addStringOption(opt =>
+            opt.setName('name').setDescription('Panel name').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('title').setDescription('Embed title').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('description').setDescription('Embed description').setRequired(true)
+          )
+          .addStringOption(opt =>
+            opt.setName('color').setDescription('Embed color (hex, e.g. #8102ff)').setRequired(true)
+          )
       )
-      .addStringOption(opt =>
-        opt.setName('color').setDescription('Embed color (hex, e.g. #5865F)').setRequired(true)
+      .addSubcommand(sub =>
+        sub
+          .setName('delete')
+          .setDescription('Delete a ticket panel')
+          .addStringOption(opt =>
+            opt.setName('name').setDescription('Panel name').setRequired(true)
+          )
       )
   )
-  .addSubcommand(sub =>
-    sub
-      .setName('panel_send')
-      .setDescription('Send a ticket panel')
-      .addStringOption(opt =>
-        opt.setName('name').setDescription('Panel name').setRequired(true)
-      )
-  )
-  .addSubcommand(sub =>
-    sub
-      .setName('panel_edit')
-      .setDescription('Edit a ticket panel config')
-      .addStringOption(opt =>
-        opt.setName('name').setDescription('Panel name').setRequired(true)
-      )
-      .addStringOption(opt =>
-        opt.setName('title').setDescription('Embed title').setRequired(true)
-      )
-      .addStringOption(opt =>
-        opt.setName('description').setDescription('Embed description').setRequired(true)
-      )
-      .addStringOption(opt =>
-        opt.setName('color').setDescription('Embed color (hex, e.g. #8102ff)').setRequired(true)
-      )
-  )
-  .addSubcommand(sub =>
-    sub
-      .setName('panel_delete')
-      .setDescription('Delete a ticket panel')
-      .addStringOption(opt =>
-        opt.setName('name').setDescription('Panel name').setRequired(true)
+  // CONFIG GROUP
+  .addSubcommandGroup(group =>
+    group
+      .setName('config')
+      .setDescription('Ticket system configuration')
+      .addSubcommand(sub =>
+        sub
+          .setName('transcript')
+          .setDescription('Set the transcript log channel')
+          .addChannelOption(opt =>
+            opt.setName('channel')
+              .setDescription('Channel to send ticket transcripts to')
+              .addChannelTypes(ChannelType.GuildText)
+              .setRequired(true)
+          )
       )
   );
 
 // 2. Command Handler
 async function execute(interaction) {
-  const sub = interaction.options.getSubcommand();
+	 // Get subcommand group and subcommand
+ 	const group = interaction.options.getSubcommandGroup(false);
+ 	const sub = interaction.options.getSubcommand();
 
-  // /ticket panel_create
-  if (sub === 'panel_create') {
+	if (group === 'config' && sub === 'transcript') {
+  if (
+    !(
+      interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+      interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+    )
+  ) {
+    return interaction.reply({
+      content: "You don't have permission to configure the ticket system. (Requires Manage Server or Administrator)",
+      ephemeral: true
+    });
+  }
+
+  const channel = interaction.options.getChannel('channel');
+  await GuildSetting.findOneAndUpdate(
+    { guildId: interaction.guild.id },
+    { transcriptChannelId: channel.id },
+    { upsert: true }
+  );
+  return interaction.reply({
+    content: `Transcript channel set to ${channel}.`,
+    ephemeral: true
+  });
+}
+
+  // Permission check for panel management (create, edit, delete)
+  if (
+    group === 'panel' &&
+    ['create', 'edit', 'delete'].includes(sub) &&
+    !(
+      interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) ||
+      interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+    )
+  ) {
+    return interaction.reply({
+      content: "You don't have permission to use this command. (Requires Manage Channels or Administrator)",
+      ephemeral: true
+    });
+  }
+
+  // /ticket panel create
+  if (group === 'panel' && sub === 'create') {
     const name = interaction.options.getString('name');
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description');
@@ -118,52 +174,48 @@ async function execute(interaction) {
     });
   }
 
-  // /ticket panel_send
-	if (sub === 'panel_send') {
+  // /ticket panel send
+  if (group === 'panel' && sub === 'send') {
     const name = interaction.options.getString('name');
     const panel = await TicketPanel.findOne({ name });
     if (!panel) {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Panel Not Found')
+            .setDescription(`No panel found with the name \`${name}\`.`)
+            .setColor(0x8102ff)
+        ]
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(panel.embed.title)
+      .setDescription(panel.embed.description)
+      .setColor(panel.embed.color);
+
+    const button = new ButtonBuilder()
+      .setCustomId(`open_ticket_modal:${name}`)
+      .setLabel('Open Ticket')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('1368589310940413952');
+
+    const row = new ActionRowBuilder().addComponents(button);
+
+    await interaction.channel.send({ embeds: [embed], components: [row] });
+
     return interaction.reply({
       embeds: [
         new EmbedBuilder()
-          .setTitle('Panel Not Found')
-          .setDescription(`No panel found with the name \`${name}\`.`)
+          .setTitle('Panel Sent')
+          .setDescription(`Ticket panel \`${name}\` has been sent successfully!`)
           .setColor(0x8102ff)
       ]
     });
   }
 
-  // --- REMOVED THE "already sent" check here ---
-
-    const embed = new EmbedBuilder()
-    .setTitle(panel.embed.title)
-    .setDescription(panel.embed.description)
-    .setColor(panel.embed.color);
-
-    const button = new ButtonBuilder()
-    .setCustomId(`open_ticket_modal:${name}`)
-    .setLabel('Open Ticket')
-    .setStyle(ButtonStyle.Secondary)
-    .setEmoji('1368589310940413952');
-
-    const row = new ActionRowBuilder().addComponents(button);
-
-    const msg = await interaction.channel.send({ embeds: [embed], components: [row] });
-
-  // --- REMOVED saving channelId/messageId so you can send it unlimited times ---
-
-  return interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle('Panel Sent')
-        .setDescription(`Ticket panel \`${name}\` has been sent successfully!`)
-        .setColor(0x8102ff)
-    ]
-  });
-}
-
-  // /ticket panel_edit
-  if (sub === 'panel_edit') {
+  // /ticket panel edit
+  if (group === 'panel' && sub === 'edit') {
     const name = interaction.options.getString('name');
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description');
@@ -212,8 +264,8 @@ async function execute(interaction) {
     });
   }
 
-  // /ticket panel_delete
-  if (sub === 'panel_delete') {
+  // /ticket panel delete
+  if (group === 'panel' && sub === 'delete') {
     const name = interaction.options.getString('name');
     const panel = await TicketPanel.findOne({ name });
     if (!panel) {
@@ -289,7 +341,7 @@ async function handleComponent(interaction) {
           id: interaction.user.id,
           allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
         },
-        // Add your staff role here if needed
+        // Add your staff role here if needed, or let mods/admins see all tickets
       ],
     });
 
