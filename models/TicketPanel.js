@@ -2,15 +2,12 @@ const mongoose = require('mongoose');
 
 const TicketPanelSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
-  channelId: { type: String, required: false },
-  messageId: { type: String, required: false },
   embed: {
     title: String,
     description: String,
-    color: String,
-	emoji: String,
+    color: String
   },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  emoji: { type: String }, // <-- make sure this is here!
 });
+
 module.exports = mongoose.model('TicketPanel', TicketPanelSchema);

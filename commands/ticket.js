@@ -12,6 +12,22 @@ const {
   ChannelType,
 } = require('discord.js');
 
+// Robust emoji parser for both Unicode and custom emojis
+function parseEmoji(emoji) {
+  if (!emoji) return undefined;
+  // Custom emoji: <a:name:id> or <:name:id>
+  const match = emoji.match(/^<(a)?:([a-zA-Z0-9_]+):(\d+)>$/);
+  if (match) {
+    return { id: match[3], name: match[2], animated: !!match[1] };
+  }
+  // Just an emoji ID (not recommended, but handle it)
+  if (/^\d+$/.test(emoji)) {
+    return { id: emoji };
+  }
+  // Otherwise, treat as Unicode
+  return emoji;
+}
+
 const TicketPanel = require('../models/TicketPanel');
 const TicketInstance = require('../models/TicketInstance');
 const GuildSetting = require('../models/GuildSetting');
@@ -20,7 +36,6 @@ const GuildSetting = require('../models/GuildSetting');
 const data = new SlashCommandBuilder()
   .setName('ticket')
   .setDescription('Ticket system commands')
-  // PANEL GROUP
   .addSubcommandGroup(group =>
     group
       .setName('panel')
@@ -42,7 +57,7 @@ const data = new SlashCommandBuilder()
             opt.setName('color').setDescription('Embed color (hex, e.g. #5865F2)').setRequired(true)
           )
           .addStringOption(opt =>
-            opt.setName('emoji').setDescription('Emoji for the button (unicode or emoji ID)').setRequired(false)
+            opt.setName('emoji').setDescription('Emoji for the button (unicode or emoji ID)').setRequired(true)
           )
       )
       .addSubcommand(sub =>
@@ -70,7 +85,7 @@ const data = new SlashCommandBuilder()
             opt.setName('color').setDescription('Embed color (hex, e.g. #8102ff)').setRequired(true)
           )
           .addStringOption(opt =>
-            opt.setName('emoji').setDescription('Emoji for the button (unicode or emoji ID)').setRequired(false)
+            opt.setName('emoji').setDescription('Emoji for the button (unicode or emoji ID)').setRequired(true)
           )
       )
       .addSubcommand(sub =>
@@ -82,7 +97,6 @@ const data = new SlashCommandBuilder()
           )
       )
   )
-  // CONFIG GROUP
   .addSubcommandGroup(group =>
     group
       .setName('config')
@@ -98,16 +112,16 @@ const data = new SlashCommandBuilder()
               .setRequired(true)
           )
       )
-	  .addSubcommand(sub =>
-  		sub
-    	.setName('staffrole')
-    	.setDescription('Set the staff role that can see all tickets')
-    		.addRoleOption(opt =>
-      	opt.setName('role')
-        .setDescription('The staff role')
-        .setRequired(true)
+      .addSubcommand(sub =>
+        sub
+          .setName('staffrole')
+          .setDescription('Set the staff role that can see all tickets')
+          .addRoleOption(opt =>
+            opt.setName('role')
+              .setDescription('The staff role')
+              .setRequired(true)
+          )
       )
-	)
   );
 
 // 2. Command Handler
@@ -117,32 +131,32 @@ async function execute(interaction) {
   const sub = interaction.options.getSubcommand();
 
   if (group === 'config' && sub === 'staffrole') {
-  if (
-    !(
-      interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-      interaction.member.permissions.has(PermissionFlagsBits.Administrator)
-    )
-  ) {
+    if (
+      !(
+        interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+        interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+      )
+    ) {
+      return interaction.reply({
+        content: "You don't have permission to configure the ticket system. (Requires Manage Server or Administrator)",
+        ephemeral: true
+      });
+    }
+
+    const role = interaction.options.getRole('role');
+    await GuildSetting.findOneAndUpdate(
+      { guildId: interaction.guild.id },
+      { staffRoleId: role.id },
+      { upsert: true }
+    );
     return interaction.reply({
-      content: "You don't have permission to configure the ticket system. (Requires Manage Server or Administrator)",
+      content: `Staff role set to ${role}. This role will be able to view all tickets.`,
       ephemeral: true
     });
   }
 
-  const role = interaction.options.getRole('role');
-  await GuildSetting.findOneAndUpdate(
-    { guildId: interaction.guild.id },
-    { staffRoleId: role.id },
-    { upsert: true }
-  );
-  return interaction.reply({
-    content: `Staff role set to ${role}. This role will be able to view all tickets.`,
-    ephemeral: true
-  });
-}
-
-	// /ticket config transcript
-  	if (group === 'config' && sub === 'transcript') {
+  // /ticket config transcript
+  if (group === 'config' && sub === 'transcript') {
     if (
       !(
         interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
@@ -245,7 +259,10 @@ async function execute(interaction) {
       .setLabel('Open Ticket')
       .setStyle(ButtonStyle.Secondary);
 
-    if (panel.emoji) button.setEmoji(panel.emoji);
+    if (panel.emoji) {
+  console.log('panel.emoji:', panel.emoji, 'parsed:', parseEmoji(panel.emoji));
+  button.setEmoji(parseEmoji(panel.emoji));
+}
 
     const row = new ActionRowBuilder().addComponents(button);
 
@@ -258,7 +275,7 @@ async function execute(interaction) {
           .setDescription(`Ticket panel \`${name}\` has been sent successfully!`)
           .setColor(0x8102ff)
       ]
-      // This is intentionally NOT ephemeral so staff can see confirmation in the channel
+      // intentionally not ephemeral so staff can see confirmation in the channel
     });
   }
 
@@ -285,7 +302,10 @@ async function execute(interaction) {
 
     // Update the panel fields
     panel.embed = { title, description, color };
-    if (emoji !== null) panel.emoji = emoji;
+    // Only overwrite the emoji if a new one is provided, otherwise keep the current one
+    if (emoji !== null && emoji !== undefined && emoji !== "") {
+      panel.emoji = emoji;
+    }
     await panel.save();
 
     // Update the Discord message if it exists
@@ -305,7 +325,11 @@ async function execute(interaction) {
           .setLabel('Open Ticket')
           .setStyle(ButtonStyle.Secondary);
 
-        if (panel.emoji) button.setEmoji(panel.emoji);
+        if (panel.emoji) {
+  console.log('panel.emoji:', panel.emoji, 'parsed:', parseEmoji(panel.emoji));
+  button.setEmoji(parseEmoji(panel.emoji));
+}
+
 
         const row = new ActionRowBuilder().addComponents(button);
 
@@ -393,33 +417,33 @@ async function handleComponent(interaction) {
     const issue = interaction.fields.getTextInputValue('issue');
 
     // Create ticket channel
-	// Fetch staff role from DB (if set)
-      const guildSettings = await GuildSetting.findOne({ guildId: interaction.guild.id });
-      const staffRoleId = guildSettings?.staffRoleId;
+    // Fetch staff role from DB (if set)
+    const guildSettings = await GuildSetting.findOne({ guildId: interaction.guild.id });
+    const staffRoleId = guildSettings?.staffRoleId;
 
-       const permissionOverwrites = [
-     {
+    const permissionOverwrites = [
+      {
         id: interaction.guild.roles.everyone,
         deny: [PermissionFlagsBits.ViewChannel],
-     },
-  	 {
-    	id: interaction.user.id,
-    	allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-  	  },
-	];
+      },
+      {
+        id: interaction.user.id,
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+      },
+    ];
 
-		if (staffRoleId) {
-  		permissionOverwrites.push({
-    	id: staffRoleId,
-    	allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-  	  });
-	}
+    if (staffRoleId) {
+      permissionOverwrites.push({
+        id: staffRoleId,
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+      });
+    }
 
-	    const ticketChannel = await interaction.guild.channels.create({
-  		name: `ticket-${interaction.user.username}`.toLowerCase(),
-  		type: ChannelType.GuildText,
-  		permissionOverwrites,
-	});
+    const ticketChannel = await interaction.guild.channels.create({
+      name: `ticket-${interaction.user.username}`.toLowerCase(),
+      type: ChannelType.GuildText,
+      permissionOverwrites,
+    });
 
     await TicketInstance.create({
       ticketId: ticketChannel.id,
