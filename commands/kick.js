@@ -30,6 +30,14 @@ module.exports = {
         .addIntegerOption(opt =>
           opt.setName('case').setDescription('The case number').setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub
+        .setName('remove')
+        .setDescription('Remove a kick case by its case number')
+        .addIntegerOption(opt =>
+          opt.setName('case').setDescription('The case number to remove').setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -73,7 +81,7 @@ module.exports = {
                 { name: 'Moderator', value: `<@${interaction.user.id}>` },
                 { name: 'Case Number', value: `${caseNumber}` }
               )
-              .setColor(0xb500b4)
+              .setColor(0x00a5b6)
               .setTimestamp()
           ]
         });
@@ -123,7 +131,7 @@ module.exports = {
       const kicks = await UserKick.find({ guildId });
       const embed = new EmbedBuilder()
         .setTitle(`All Kick Cases in ${interaction.guild.name}`)
-        .setColor(0xb500b4);
+        .setColor(0x00a5b6);
 
       if (!kicks.length) {
         embed.setDescription('No kick cases found in this server.');
@@ -154,7 +162,7 @@ module.exports = {
       }
       const embed = new EmbedBuilder()
         .setTitle(`Kick Case #${caseNumber}`)
-        .setColor(0xb500b4);
+        .setColor(0x00a5b6);
 
       if (!kick) {
         embed.setDescription('No kick case found with that number.');
@@ -165,6 +173,45 @@ module.exports = {
           `**Moderator:** <@${kick.moderatorId}>\n` +
           `**Date:** <t:${Math.floor(new Date(kick.timestamp || Date.now()).getTime() / 1000)}:F>`
         );
+      }
+      await interaction.reply({ embeds: [embed] });
+    }
+
+    if (sub === 'remove') {
+      const caseNumber = interaction.options.getInteger('case');
+      // Find the user and remove the kick case
+      const userKick = await UserKick.findOne({ guildId, 'kicks.case': caseNumber });
+      let removed = false;
+      let wasLatest = false;
+
+      // Find the counter for this guild
+      let counter = await GuildKickCounter.findOne({ guildId });
+
+      if (userKick) {
+        const index = userKick.kicks.findIndex(k => k.case === caseNumber);
+        if (index > -1) {
+          userKick.kicks.splice(index, 1);
+          await userKick.save();
+          removed = true;
+
+          // If this was the latest case, decrement the counter
+          if (counter && caseNumber === counter.nextCase - 1) {
+            counter.nextCase -= 1;
+            await counter.save();
+            wasLatest = true;
+          }
+        }
+      }
+      const embed = new EmbedBuilder()
+        .setTitle(`Remove Kick Case #${caseNumber}`)
+        .setColor(0x00a5b6);
+
+      if (!removed) {
+        embed.setDescription('No kick case found with that number.');
+      } else if (wasLatest) {
+        embed.setDescription(`Kick case #${caseNumber} has been removed. Counter decremented.`);
+      } else {
+        embed.setDescription(`Kick case #${caseNumber} has been removed.`);
       }
       await interaction.reply({ embeds: [embed] });
     }

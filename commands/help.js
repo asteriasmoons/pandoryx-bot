@@ -10,7 +10,7 @@ module.exports = {
     // Example: List of commands/pages (replace with your actual commands)
     const helpPages = new EmbedBuilder()
 	.setTitle('**Help Pages**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.setDescription('This is the help menu for the bot. All commands are listed here and are clickable, so you can use them immediately by selecting them. Commands are organized into groups, and each page of the help menu explains what each command does within its group, making it easy to find and understand the features you need.')
 	.addFields(
 		{ name: '</help:1375869926400725152>', value: 'The help command with pages.' }
@@ -19,7 +19,7 @@ module.exports = {
 
 	const embedCmds = new EmbedBuilder()
 	.setTitle('**Embed Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</embed create:1374808928730222612>', value: 'Create a new embed message' },
 		{ name: '</embed edit:1374808928730222612>', value: 'Edit an existing embed you created by name.' },
@@ -32,7 +32,7 @@ module.exports = {
 
 	const noteCmds = new EmbedBuilder()
 	.setTitle('**User Note Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</note add:1374831632451637260>', value: 'Add a note to a user.' },
 		{ name: '</note view:1374831632451637260>', value: 'View a note for a user.' },
@@ -42,7 +42,7 @@ module.exports = {
 
 	const warnCmds = new EmbedBuilder()
 	.setTitle('**Warning Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</warn add:1374900166108254260>', value: 'Adds a warning to the user and DMs the user.' },
 		{ name: '</warn view:1374900166108254260>', value: 'View all warnings for a user.' },
@@ -52,7 +52,7 @@ module.exports = {
 
 	const banCmds = new EmbedBuilder()
 	.setTitle('**Ban Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</ban add:1374937047911104534>', value: 'Adds a ban on a user using the users ID.' },
 		{ name: '</ban remove:1374937047911104534>', value: 'Removes a user ban.' },
@@ -63,7 +63,7 @@ module.exports = {
 
 	const kickCmds = new EmbedBuilder()
 	.setTitle('**Kick Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</kick add:1375110488551329945>', value: 'Kick a user and add a case to your servers kick list.' },
 		{ name: '</kick list:1375110488551329945>', value: 'Get a list of the kick cases in the server.' },
@@ -73,7 +73,7 @@ module.exports = {
 
 	const autoRoleCmds = new EmbedBuilder()
 	.setTitle('**Autorole Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</autorole add:1375172777962766337>', value: 'Add an autorole to the list of autoroles.' },
 		{ name: '</autorole view:1375172777962766337>', value: 'View all of the servers autoroles.' },
@@ -83,7 +83,7 @@ module.exports = {
 
 	const timeoutCmds = new EmbedBuilder()
 	.setTitle('**Timeout Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</timeout add:1375241154869858367>', value: 'Adds a timeout to the specified user.' },
 		{ name: '</timeout remove:1375241154869858367>', value: 'Removes a timeout from the specified user.' },
@@ -94,7 +94,7 @@ module.exports = {
 
 	const ticketCmds = new EmbedBuilder()
 	.setTitle('**Ticket Commands**')
-	.setColor('#ff50d2')
+	.setColor('#ff51fe')
 	.addFields(
 		{ name: '</ticket panel create:1375475684813574290>', value: 'Create a new ticket panel with a panel name, title, description, color and emoji.' },
 		{ name: '</ticket panel send:1375475684813574290>', value: 'Send a ticket panel in the current channel.' },
