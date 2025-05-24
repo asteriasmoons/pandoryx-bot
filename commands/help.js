@@ -67,7 +67,8 @@ module.exports = {
 	.addFields(
 		{ name: '</kick add:1375110488551329945>', value: 'Kick a user and add a case to your servers kick list.' },
 		{ name: '</kick list:1375110488551329945>', value: 'Get a list of the kick cases in the server.' },
-		{ name: '</kick view:1375110488551329945>', value: 'View a kick case by its index number.' }
+		{ name: '</kick view:1375110488551329945>', value: 'View a kick case by its index number.' },
+		{ name: '</kick remove:1375110488551329945>', value: 'Remove a kick case from the server' }
 	)
 	.setFooter({ text: 'Pandoryx Help Pages' });
 

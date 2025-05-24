@@ -47,7 +47,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Permission Denied')
             .setDescription('You must have the **Kick Members** permission to use this command.')
-            .setColor(0xb500b4)
+            .setColor(0x00a5b6)
         ]
       });
     }
@@ -121,7 +121,7 @@ module.exports = {
           { name: 'Moderator', value: `<@${interaction.user.id}>` },
           { name: 'Case Number', value: `${caseNumber}` }
         )
-        .setColor(0xb500b4)
+        .setColor(0x00a5b6)
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     }
