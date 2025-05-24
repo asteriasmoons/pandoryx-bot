@@ -13,7 +13,7 @@ module.exports = {
 	.setColor('#ff50d2')
 	.setDescription('This is the help menu for the bot. All commands are listed here and are clickable, so you can use them immediately by selecting them. Commands are organized into groups, and each page of the help menu explains what each command does within its group, making it easy to find and understand the features you need.')
 	.addFields(
-		{ name: '/help', value: 'The help command with pages.' }
+		{ name: '</help:1375869926400725152>', value: 'The help command with pages.' }
 	)
 	.setFooter({ text: 'Pandoryx Help Pages' });
 
