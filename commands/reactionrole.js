@@ -42,32 +42,48 @@ module.exports = {
 
     const sub = interaction.options.getSubcommand();
 
-    // CREATE
-    if (sub === 'create') {
-      const text = interaction.options.getString('text');
-      const channel = interaction.channel;
+	// ...inside your execute(interaction) function:
+	if (sub === 'create') {
+  	const text = interaction.options.getString('text');
+  	const embedTitle = interaction.options.getString('embed_title');
+  	const embedDescription = interaction.options.getString('embed_description');
+  	const embedColor = interaction.options.getString('embed_color');
 
-      // Send the message
-      const msg = await channel.send({ content: text });
+ 	const channel = interaction.channel;
+  	let sentMsg;
 
-      // Create DB entry
-      await ReactionRoleMessage.create({
-        guildId: interaction.guild.id,
-        channelId: channel.id,
-        messageId: msg.id,
-        emojiRoleMap: {},
-      });
+  	if (embedTitle || embedDescription) {
+    // Send an embed if any embed field is set
+    const embed = new EmbedBuilder()
+      .setTitle(embedTitle || null)
+      .setDescription(embedDescription || null)
+      .setColor(embedColor || '#00bfff');
+    sentMsg = await channel.send({ embeds: [embed] });
+  	} else if (text) {
+    // Send a plain text message if no embed fields
+    sentMsg = await channel.send({ content: text });
+  	} else {
+    return interaction.reply({ content: 'You must provide either text or embed fields!', ephemeral: true });
+  	}
 
-      await interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('Reaction Role Message Created')
-            .setDescription(`Message ID: \`${msg.id}\`\nNow use \`/reactionrole add\` to assign emojis and roles!`)
-            .setColor(0x00bfff)
-        ],
-        ephemeral: true
-      });
-    }
+  	// Save to database as before
+  	await ReactionRoleMessage.create({
+    guildId: interaction.guild.id,
+    channelId: channel.id,
+    messageId: sentMsg.id,
+    emojiRoleMap: {},
+  	});
+
+  	await interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle('Reaction Role Message Created')
+        .setDescription(`Message ID: \`${sentMsg.id}\`\nNow use \`/reactionrole add\` to assign emojis and roles!`)
+        .setColor(0x00bfff)
+    ],
+    ephemeral: true
+  });
+}
 
     // ADD
     if (sub === 'add') {
