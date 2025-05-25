@@ -36,7 +36,12 @@ module.exports = {
         .addStringOption(opt => opt.setName('emoji').setDescription('Emoji').setRequired(true))
     ),
 
-  async execute(interaction) {
+  /**
+   * @param {import('discord.js').ChatInputCommandInteraction} interaction
+   * @param {import('discord.js').Client} client
+   * @param {Object} reactionRoleCache
+   */
+  async execute(interaction, client, reactionRoleCache) {
     if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
       return interaction.reply({ content: 'You need the Manage Roles permission.', ephemeral: true });
     }
@@ -75,13 +80,21 @@ module.exports = {
       }
 
       // Save to database with panelName
-      await ReactionRoleMessage.create({
+      const doc = await ReactionRoleMessage.create({
         guildId: interaction.guild.id,
         panelName,
         channelId: channel.id,
         messageId: sentMsg.id,
         emojiRoleMap: {},
       });
+
+      // Add to cache
+      reactionRoleCache[sentMsg.id] = {
+        emojiRoleMap: {},
+        panelName,
+        channelId: channel.id,
+        guildId: interaction.guild.id
+      };
 
       await interaction.reply({
         embeds: [
@@ -94,53 +107,65 @@ module.exports = {
       });
     }
 
+    // ADD TO PANEL
+    if (sub === 'add') {
+      const panelName = interaction.options.getString('name');
+      const emojiInput = interaction.options.getString('emoji');
+      const role = interaction.options.getRole('role');
+      const emojiKey = parseEmojiInput(emojiInput);
 
-	// ADD TO PANEL
-	if (sub === 'add') {
-  	const panelName = interaction.options.getString('name');
-  	const emojiInput = interaction.options.getString('emoji');
-  	const role = interaction.options.getRole('role');
-  	const emojiKey = parseEmojiInput(emojiInput);
+      const data = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
+      if (!data) {
+        return interaction.reply({ content: 'Panel not found. Please check the name.', ephemeral: true });
+      }
 
-  	const data = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
-  	if (!data) {
-    return interaction.reply({ content: 'Panel not found. Please check the name.', ephemeral: true });
-  }
+      // Ensure emojiRoleMap is an object
+      if (!data.emojiRoleMap || typeof data.emojiRoleMap !== "object") {
+        data.emojiRoleMap = {};
+      }
 
-  	// Ensure emojiRoleMap is an object
-  	if (!data.emojiRoleMap || typeof data.emojiRoleMap !== "object") {
-    data.emojiRoleMap = {};
-  }
+      // Optional: Prevent duplicate emoji entries
+      if (data.emojiRoleMap[emojiKey]) {
+        return interaction.reply({ content: 'That emoji is already assigned to a role in this panel.', ephemeral: true });
+      }
 
-  	// Optional: Prevent duplicate emoji entries
-  	if (data.emojiRoleMap[emojiKey]) {
-    return interaction.reply({ content: 'That emoji is already assigned to a role in this panel.', ephemeral: true });
-  }
+      // Update mapping (this ADDS, not overwrites)
+      data.emojiRoleMap[emojiKey] = role.id;
+      data.markModified('emojiRoleMap');
+      await data.save();
 
-  // Update mapping (this ADDS, not overwrites)
-  data.emojiRoleMap[emojiKey] = role.id;
-  data.markModified('emojiRoleMap'); // <--- CRUCIAL for Mongoose!
-  await data.save();
+      // Update cache
+      if (!reactionRoleCache[data.messageId]) {
+        // If cache was lost, restore from DB
+        reactionRoleCache[data.messageId] = {
+          emojiRoleMap: { ...data.emojiRoleMap },
+          panelName: data.panelName,
+          channelId: data.channelId,
+          guildId: data.guildId
+        };
+      } else {
+        reactionRoleCache[data.messageId].emojiRoleMap[emojiKey] = role.id;
+      }
 
-  // React to the message
-  const channel = await interaction.guild.channels.fetch(data.channelId);
-  const msg = await channel.messages.fetch(data.messageId);
-  try {
-    await msg.react(emojiInput);
-  } catch (e) {
-    return interaction.reply({ content: `Failed to react with that emoji. Make sure it's a valid emoji and the bot can use it.`, ephemeral: true });
-  }
+      // React to the message
+      const channel = await interaction.guild.channels.fetch(data.channelId);
+      const msg = await channel.messages.fetch(data.messageId);
+      try {
+        await msg.react(emojiInput);
+      } catch (e) {
+        return interaction.reply({ content: `Failed to react with that emoji. Make sure it's a valid emoji and the bot can use it.`, ephemeral: true });
+      }
 
-  await interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle('Reaction Role Added')
-        .setDescription(`Panel: \`${panelName}\`\nReact with ${emojiInput} to get <@&${role.id}>`)
-        .setColor(0x00bfff)
-    ],
-    ephemeral: true
-  });
-}
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Reaction Role Added')
+            .setDescription(`Panel: \`${panelName}\`\nReact with ${emojiInput} to get <@&${role.id}>`)
+            .setColor(0x00bfff)
+        ],
+        ephemeral: true
+      });
+    }
 
     // REMOVE FROM PANEL
     if (sub === 'remove') {
@@ -159,7 +184,13 @@ module.exports = {
 
       // Remove mapping
       delete data.emojiRoleMap[emojiKey];
+      data.markModified('emojiRoleMap');
       await data.save();
+
+      // Update cache
+      if (reactionRoleCache[data.messageId]) {
+        delete reactionRoleCache[data.messageId].emojiRoleMap[emojiKey];
+      }
 
       // Remove the reaction from the message
       const channel = await interaction.guild.channels.fetch(data.channelId);

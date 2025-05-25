@@ -3,14 +3,19 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, ActivityType, Partials } = require('discord.js');
+
+// Import your ReactionRoleMessage model (adjust the path as needed)
+const ReactionRoleMessage = require('./models/ReactionRoleMessage'); // <-- FIX THIS PATH IF NEEDED
+
+// This will hold your mapping: { [messageId]: { emojiRoleMap, ...otherData } }
+const reactionRoleCache = {};
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('Connected to MongoDB!'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// Discord client with necessary intents
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -19,6 +24,11 @@ const client = new Client({
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildMessageTyping,
         GatewayIntentBits.GuildMembers
+    ],
+    partials: [
+        Partials.Message,
+        Partials.Channel,
+        Partials.Reaction
     ]
 });
 
@@ -43,7 +53,6 @@ function loadCommands(dir) {
 }
 loadCommands(commandsPath);
 
-require('./events/guildMemberAdd')(client);
 // Load events from /events folder
 const eventsPath = path.join(__dirname, 'events');
 if (fs.existsSync(eventsPath)) {
@@ -51,22 +60,42 @@ if (fs.existsSync(eventsPath)) {
     for (const file of eventFiles) {
         const event = require(path.join(eventsPath, file));
         if (event.name && typeof event.execute === 'function') {
-            // Pass agenda and client to events if needed
-            client.on(event.name, (...args) => event.execute(...args, client));
+            client.on(event.name, (...args) => event.execute(...args, client, reactionRoleCache));
             console.log(`Loaded event: ${event.name}`);
         }
     }
 }
 
-// Your existing client setup, requires, etc., would be above this
+// Example debug event
+client.on('messageReactionAdd', (reaction, user) => {
+    console.log('RAW messageReactionAdd event fired!', reaction.emoji.name, user.tag);
+});
 
-client.once('ready', async () => { // <<< Added 'async' here
+client.once('ready', async () => { 
+    // Load all reaction role messages into cache
+    const allPanels = await ReactionRoleMessage.find({});
+    for (const panel of allPanels) {
+        reactionRoleCache[panel.messageId] = {
+            emojiRoleMap: panel.emojiRoleMap,
+            panelName: panel.panelName,
+            channelId: panel.channelId,
+            guildId: panel.guildId,
+            // ...add any other fields you want
+        };
+    }
+    console.log(`Loaded ${Object.keys(reactionRoleCache).length} reaction role panels into cache.`);
+
+    // Set presence after the bot is ready
     client.user.setPresence({
         activities: [
             { name: 'With more bots 💛', type: ActivityType.Streaming }
-        ],
+        ]
     });
+
     console.log(`Bot ${client.user.tag} is now ready!`);
-    }); // <<< This is the closing of client.once('ready', async () => { ... })
+});
 
 client.login(process.env.TOKEN);
+
+// Optionally export the cache for use in other files
+module.exports = { client, reactionRoleCache };
