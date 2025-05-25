@@ -10,13 +10,16 @@ function parseEmojiInput(emojiInput) {
 }
 
 module.exports = {
-  data: new SlashCommandBuilder()
+	data: new SlashCommandBuilder()
     .setName('reactionrole')
     .setDescription('Create and manage reaction role messages')
     .addSubcommand(sub =>
       sub.setName('create')
         .setDescription('Create a new reaction role message')
-        .addStringOption(opt => opt.setName('text').setDescription('Message content').setRequired(true))
+        .addStringOption(opt => opt.setName('text').setDescription('Message content (if not using embed)').setRequired(false))
+        .addStringOption(opt => opt.setName('embed_title').setDescription('Embed title').setRequired(false))
+        .addStringOption(opt => opt.setName('embed_description').setDescription('Embed description').setRequired(false))
+        .addStringOption(opt => opt.setName('embed_color').setDescription('Embed color (hex, e.g. #00bfff)').setRequired(false))
     )
     .addSubcommand(sub =>
       sub.setName('add')
