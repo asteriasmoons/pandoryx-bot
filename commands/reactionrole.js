@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const ReactionRoleMessage = require('../models/ReactionRoleMessage');
 
-// Helper: Get emoji key
+// Helper: Get emoji key (works for custom and unicode)
 function parseEmojiInput(emojiInput) {
   // Custom emoji: <a:name:id> or <:name:id>
   const custom = emojiInput.match(/^<a?:\w+:(\d+)>$/);
@@ -94,37 +94,53 @@ module.exports = {
       });
     }
 
-    // ADD TO PANEL
-    if (sub === 'add') {
-      const panelName = interaction.options.getString('name');
-      const emojiInput = interaction.options.getString('emoji');
-      const role = interaction.options.getRole('role');
-      const emojiKey = parseEmojiInput(emojiInput);
 
-      const data = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
-      if (!data) {
-        return interaction.reply({ content: 'Panel not found. Please check the name.', ephemeral: true });
-      }
+	// ADD TO PANEL
+	if (sub === 'add') {
+  	const panelName = interaction.options.getString('name');
+  	const emojiInput = interaction.options.getString('emoji');
+  	const role = interaction.options.getRole('role');
+  	const emojiKey = parseEmojiInput(emojiInput);
 
-      // Update mapping
-      data.emojiRoleMap[emojiKey] = role.id;
-      await data.save();
+  	const data = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
+  	if (!data) {
+    return interaction.reply({ content: 'Panel not found. Please check the name.', ephemeral: true });
+  }
 
-      // React to the message
-      const channel = await interaction.guild.channels.fetch(data.channelId);
-      const msg = await channel.messages.fetch(data.messageId);
-      await msg.react(emojiInput);
+  	// Ensure emojiRoleMap is an object
+  	if (!data.emojiRoleMap || typeof data.emojiRoleMap !== "object") {
+    data.emojiRoleMap = {};
+  }
 
-      await interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('Reaction Role Added')
-            .setDescription(`Panel: \`${panelName}\`\nReact with ${emojiInput} to get <@&${role.id}>`)
-            .setColor(0x00bfff)
-        ],
-        ephemeral: true
-      });
-    }
+  	// Optional: Prevent duplicate emoji entries
+  	if (data.emojiRoleMap[emojiKey]) {
+    return interaction.reply({ content: 'That emoji is already assigned to a role in this panel.', ephemeral: true });
+  }
+
+  // Update mapping (this ADDS, not overwrites)
+  data.emojiRoleMap[emojiKey] = role.id;
+  data.markModified('emojiRoleMap'); // <--- CRUCIAL for Mongoose!
+  await data.save();
+
+  // React to the message
+  const channel = await interaction.guild.channels.fetch(data.channelId);
+  const msg = await channel.messages.fetch(data.messageId);
+  try {
+    await msg.react(emojiInput);
+  } catch (e) {
+    return interaction.reply({ content: `Failed to react with that emoji. Make sure it's a valid emoji and the bot can use it.`, ephemeral: true });
+  }
+
+  await interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle('Reaction Role Added')
+        .setDescription(`Panel: \`${panelName}\`\nReact with ${emojiInput} to get <@&${role.id}>`)
+        .setColor(0x00bfff)
+    ],
+    ephemeral: true
+  });
+}
 
     // REMOVE FROM PANEL
     if (sub === 'remove') {
