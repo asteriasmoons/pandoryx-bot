@@ -10,12 +10,13 @@ function parseEmojiInput(emojiInput) {
 }
 
 module.exports = {
-	data: new SlashCommandBuilder()
+  data: new SlashCommandBuilder()
     .setName('reactionrole')
-    .setDescription('Create and manage reaction role messages')
+    .setDescription('Create and manage reaction role panels')
     .addSubcommand(sub =>
       sub.setName('create')
-        .setDescription('Create a new reaction role message')
+        .setDescription('Create a new reaction role panel')
+        .addStringOption(opt => opt.setName('name').setDescription('Panel name (unique per server)').setRequired(true))
         .addStringOption(opt => opt.setName('text').setDescription('Message content (if not using embed)').setRequired(false))
         .addStringOption(opt => opt.setName('embed_title').setDescription('Embed title').setRequired(false))
         .addStringOption(opt => opt.setName('embed_description').setDescription('Embed description').setRequired(false))
@@ -23,15 +24,15 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('add')
-        .setDescription('Add a reaction/role pair to an existing reaction role message')
-        .addStringOption(opt => opt.setName('messageid').setDescription('Reaction role message ID').setRequired(true))
+        .setDescription('Add a reaction/role pair to an existing panel')
+        .addStringOption(opt => opt.setName('name').setDescription('Panel name').setRequired(true))
         .addStringOption(opt => opt.setName('emoji').setDescription('Emoji').setRequired(true))
         .addRoleOption(opt => opt.setName('role').setDescription('Role').setRequired(true))
     )
     .addSubcommand(sub =>
       sub.setName('remove')
-        .setDescription('Remove a reaction/role pair from a reaction role message')
-        .addStringOption(opt => opt.setName('messageid').setDescription('Reaction role message ID').setRequired(true))
+        .setDescription('Remove a reaction/role pair from a panel')
+        .addStringOption(opt => opt.setName('name').setDescription('Panel name').setRequired(true))
         .addStringOption(opt => opt.setName('emoji').setDescription('Emoji').setRequired(true))
     ),
 
@@ -42,103 +43,111 @@ module.exports = {
 
     const sub = interaction.options.getSubcommand();
 
-	// ...inside your execute(interaction) function:
-	if (sub === 'create') {
-  	const text = interaction.options.getString('text');
-  	const embedTitle = interaction.options.getString('embed_title');
-  	const embedDescription = interaction.options.getString('embed_description');
-  	const embedColor = interaction.options.getString('embed_color');
+    // CREATE PANEL
+    if (sub === 'create') {
+      const panelName = interaction.options.getString('name');
+      const text = interaction.options.getString('text');
+      const embedTitle = interaction.options.getString('embed_title');
+      const embedDescription = interaction.options.getString('embed_description');
+      const embedColor = interaction.options.getString('embed_color');
 
- 	const channel = interaction.channel;
-  	let sentMsg;
-
-  	if (embedTitle || embedDescription) {
-    // Send an embed if any embed field is set
-    const embed = new EmbedBuilder()
-      .setTitle(embedTitle || null)
-      .setDescription(embedDescription || null)
-      .setColor(embedColor || '#00bfff');
-    sentMsg = await channel.send({ embeds: [embed] });
-  	} else if (text) {
-    // Send a plain text message if no embed fields
-    sentMsg = await channel.send({ content: text });
-  	} else {
-    return interaction.reply({ content: 'You must provide either text or embed fields!', ephemeral: true });
-  	}
-
-  	// Save to database as before
-  	await ReactionRoleMessage.create({
-    guildId: interaction.guild.id,
-    channelId: channel.id,
-    messageId: sentMsg.id,
-    emojiRoleMap: {},
-  	});
-
-  	await interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle('Reaction Role Message Created')
-        .setDescription(`Message ID: \`${sentMsg.id}\`\nNow use \`/reactionrole add\` to assign emojis and roles!`)
-        .setColor(0x00bfff)
-    ],
-    ephemeral: true
-  });
-}
-
-    // ADD
-    if (sub === 'add') {
-      const messageId = interaction.options.getString('messageid');
-      const emojiInput = interaction.options.getString('emoji');
-      const role = interaction.options.getRole('role');
-
-      const emojiKey = parseEmojiInput(emojiInput);
-
-      const data = await ReactionRoleMessage.findOne({ messageId });
-      if (!data) {
-        return interaction.reply({ content: 'Reaction role message not found.', ephemeral: true });
+      // Prevent duplicate panel names in the same guild
+      const exists = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
+      if (exists) {
+        return interaction.reply({ content: `A panel named \`${panelName}\` already exists in this server.`, ephemeral: true });
       }
 
-      // Update mapping
-      data.emojiRoleMap.set(emojiKey, role.id);
-      await data.save();
+      const channel = interaction.channel;
+      let sentMsg;
 
-      // React to the message
-      const channel = await interaction.guild.channels.fetch(data.channelId);
-      const msg = await channel.messages.fetch(messageId);
-      await msg.react(emojiInput);
+      if (embedTitle || embedDescription) {
+        // Send an embed if any embed field is set
+        const embed = new EmbedBuilder()
+          .setTitle(embedTitle || null)
+          .setDescription(embedDescription || null)
+          .setColor(embedColor || '#00bfff');
+        sentMsg = await channel.send({ embeds: [embed] });
+      } else if (text) {
+        // Send a plain text message if no embed fields
+        sentMsg = await channel.send({ content: text });
+      } else {
+        return interaction.reply({ content: 'You must provide either text or embed fields!', ephemeral: true });
+      }
+
+      // Save to database with panelName
+      await ReactionRoleMessage.create({
+        guildId: interaction.guild.id,
+        panelName,
+        channelId: channel.id,
+        messageId: sentMsg.id,
+        emojiRoleMap: {},
+      });
 
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Reaction Role Added')
-            .setDescription(`React with ${emojiInput} to get <@&${role.id}>`)
+            .setTitle('Reaction Role Panel Created')
+            .setDescription(`Panel: \`${panelName}\`\nNow use \`/reactionrole add\` to assign emojis and roles!`)
             .setColor(0x00bfff)
         ],
         ephemeral: true
       });
     }
 
-    // REMOVE
+    // ADD TO PANEL
+    if (sub === 'add') {
+      const panelName = interaction.options.getString('name');
+      const emojiInput = interaction.options.getString('emoji');
+      const role = interaction.options.getRole('role');
+      const emojiKey = parseEmojiInput(emojiInput);
+
+      const data = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
+      if (!data) {
+        return interaction.reply({ content: 'Panel not found. Please check the name.', ephemeral: true });
+      }
+
+      // Update mapping
+      data.emojiRoleMap[emojiKey] = role.id;
+      await data.save();
+
+      // React to the message
+      const channel = await interaction.guild.channels.fetch(data.channelId);
+      const msg = await channel.messages.fetch(data.messageId);
+      await msg.react(emojiInput);
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Reaction Role Added')
+            .setDescription(`Panel: \`${panelName}\`\nReact with ${emojiInput} to get <@&${role.id}>`)
+            .setColor(0x00bfff)
+        ],
+        ephemeral: true
+      });
+    }
+
+    // REMOVE FROM PANEL
     if (sub === 'remove') {
-      const messageId = interaction.options.getString('messageid');
+      const panelName = interaction.options.getString('name');
       const emojiInput = interaction.options.getString('emoji');
       const emojiKey = parseEmojiInput(emojiInput);
 
-      const data = await ReactionRoleMessage.findOne({ messageId });
+      const data = await ReactionRoleMessage.findOne({ guildId: interaction.guild.id, panelName });
       if (!data) {
-        return interaction.reply({ content: 'Reaction role message not found.', ephemeral: true });
+        return interaction.reply({ content: 'Panel not found. Please check the name.', ephemeral: true });
       }
 
-      if (!data.emojiRoleMap.has(emojiKey)) {
-        return interaction.reply({ content: 'That emoji is not set for this message.', ephemeral: true });
+      if (!data.emojiRoleMap || !data.emojiRoleMap[emojiKey]) {
+        return interaction.reply({ content: 'That emoji is not set for this panel.', ephemeral: true });
       }
 
-      data.emojiRoleMap.delete(emojiKey);
+      // Remove mapping
+      delete data.emojiRoleMap[emojiKey];
       await data.save();
 
       // Remove the reaction from the message
       const channel = await interaction.guild.channels.fetch(data.channelId);
-      const msg = await channel.messages.fetch(messageId);
+      const msg = await channel.messages.fetch(data.messageId);
       // Remove bot's own reaction (if present)
       const reaction = msg.reactions.cache.find(r =>
         (r.emoji.id && r.emoji.id === emojiKey) ||
@@ -150,7 +159,7 @@ module.exports = {
         embeds: [
           new EmbedBuilder()
             .setTitle('Reaction Role Removed')
-            .setDescription(`Removed ${emojiInput} from the reaction role message.`)
+            .setDescription(`Removed ${emojiInput} from panel \`${panelName}\`.`)
             .setColor(0xff0000)
         ],
         ephemeral: true
