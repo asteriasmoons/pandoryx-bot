@@ -61,9 +61,9 @@ module.exports = {
 
                 // Create and send confirmation embed
                 const confirmEmbed = new EmbedBuilder()
-                    .setColor('#ff0000')
+                    .setColor('#4a40bf')
                     .setTitle('Role Removed!')
-                    .setDescription(`❌ The **${role.name}** role has been removed`)
+                    .setDescription(`The **${role.name}** role has been removed`)
                     .setFooter({ text: 'React with the emoji again to get the role back' });
 
                 await user.send({ embeds: [confirmEmbed] }).catch(() => {

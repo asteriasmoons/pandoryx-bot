@@ -34,7 +34,16 @@ module.exports = {
         .setDescription('Remove a reaction/role pair from a panel')
         .addStringOption(opt => opt.setName('name').setDescription('Panel name').setRequired(true))
         .addStringOption(opt => opt.setName('emoji').setDescription('Emoji').setRequired(true))
-    ),
+    )
+	.addSubcommand(sub =>
+  	  sub.setName('delete')
+       .setDescription('Delete a reaction role panel')
+       .addStringOption(opt => 
+      opt.setName('name')
+        .setDescription('Panel name')
+        .setRequired(true)
+    )
+),
 
   /**
    * @param {import('discord.js').ChatInputCommandInteraction} interaction
@@ -88,6 +97,7 @@ module.exports = {
         emojiRoleMap: {},
       });
 
+	  console.log('Trying to store message in cache with ID:', sentMsg.id);
       // Add to cache
       reactionRoleCache[sentMsg.id] = {
         emojiRoleMap: {},
@@ -212,5 +222,58 @@ module.exports = {
         ephemeral: true
       });
     }
+	// DELETE PANEL
+if (sub === 'delete') {
+  const panelName = interaction.options.getString('name');
+
+  try {
+    const data = await ReactionRoleMessage.findOne({
+      guildId: interaction.guild.id,
+      panelName,
+    });
+
+    if (!data) {
+      return await interaction.reply({
+        content: 'Panel not found. Please check the name.',
+        ephemeral: true,
+      });
+    }
+
+    try {
+      const channel = await interaction.guild.channels.fetch(data.channelId);
+      const msg = await channel.messages.fetch(data.messageId);
+      await msg.delete();
+    } catch (err) {
+      console.warn('Could not delete the original message:', err.message);
+      // Don't throw — we still want to proceed
+    }
+
+    await ReactionRoleMessage.deleteOne({ _id: data._id });
+
+    if (reactionRoleCache && reactionRoleCache[data.messageId]) {
+      delete reactionRoleCache[data.messageId];
+    } else {
+      console.log('Cache did not contain this panel, skipping cache cleanup.');
+    }
+
+    return await interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('Reaction Role Panel Deleted')
+          .setDescription(`Panel \`${panelName}\` has been deleted.`)
+          .setColor(0xff0000),
+      ],
+      ephemeral: true,
+    });
+  } catch (err) {
+    console.error('Something went wrong inside /reactionrole delete:', err);
+    if (!interaction.replied && !interaction.deferred) {
+      return await interaction.reply({
+        content: 'Something went wrong while deleting the panel.',
+        ephemeral: true,
+      });
+    }
+  }
+}
   }
 };

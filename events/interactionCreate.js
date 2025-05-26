@@ -472,7 +472,11 @@ module.exports = {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
       try {
-        await command.execute(interaction);
+        // Ensure the cache object exists
+if (!client.reactionRoleCache) {
+  client.reactionRoleCache = {};
+}
+        await command.execute(interaction, client, client.reactionRoleCache);
       } catch (error) {
         console.error(error);
         try {
