@@ -1,5 +1,6 @@
-import { Routes, Route, NavLink } from 'react-router-dom'
-import WarningsViewer from './components/WarningsViewer'
+import { Routes, Route, NavLink } from 'react-router-dom';
+import WarningsViewer from './components/WarningsViewer';
+import LoginStatus from './components/LoginStatus'; // 🆕 import this
 
 function App() {
   return (
@@ -18,6 +19,9 @@ function App() {
         <h2 style={{ color: '#fff', marginBottom: '2rem' }}>📂 Menu</h2>
         <NavLink to="/" className="sidebar-link">🏠 Welcome</NavLink>
         <NavLink to="/warnings" className="sidebar-link">⚠️ Warnings</NavLink>
+
+        {/* 🆕 Show login or user info */}
+        <LoginStatus />
       </nav>
 
       {/* Main Content Area */}
@@ -38,7 +42,7 @@ function App() {
         </Routes>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
