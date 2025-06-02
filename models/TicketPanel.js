@@ -8,6 +8,10 @@ const TicketPanelSchema = new mongoose.Schema({
     color: String
   },
   emoji: { type: String }, // <-- make sure this is here!
+  // Add these to TicketPanelSchema
+categoryId: { type: String }, // where tickets open
+message: { type: String }, // additional message
+transcript: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('TicketPanel', TicketPanelSchema);
