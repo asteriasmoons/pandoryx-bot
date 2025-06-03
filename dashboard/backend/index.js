@@ -147,8 +147,11 @@ const TicketPanel = require('../../models/TicketPanel');
 app.get('/api/tickets/panels', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
 
+  const { guildId } = req.query;
+  if (!guildId) return res.status(400).json({ error: 'Missing guildId' });
+
   try {
-    const panels = await TicketPanel.find({});
+    const panels = await TicketPanel.find({ guildId });
     res.json(panels);
   } catch (err) {
     console.error('Error fetching panels:', err);
@@ -221,6 +224,56 @@ app.delete('/api/tickets/panels/:id', async (req, res) => {
     console.error('Error deleting panel:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+app.get('/api/emojis/:guildId', async (req, res) => {
+  const guildId = req.params.guildId;
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'Not logged in' });
+  }
+
+  try {
+    const guild = user.guilds.find(g => g.id === guildId);
+    if (!guild) {
+      return res.status(403).json({ success: false, message: 'Not a member of guild' });
+    }
+
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
+      headers: { Authorization: `Bot ${process.env.BOT_TOKEN}` }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return res.status(response.status).json({ success: false, message: error.message });
+    }
+
+    const emojis = await response.json();
+
+    const formattedEmojis = emojis.map(e => ({
+      id: e.id,
+      name: e.name,
+      animated: e.animated,
+      preview: e.animated ? `<a:${e.name}:${e.id}>` : `<:${e.name}:${e.id}>`,
+      identifier: e.id, // use ID as identifier for reliability
+    }));
+
+    res.json({ success: true, emojis: formattedEmojis });
+  } catch (err) {
+    console.error('Emoji fetch error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch emojis' });
+  }
+});
+
+app.get('/api/categories/:guildId', async (req, res) => {
+  const { guildId } = req.params;
+  const response = await fetch(`https://discord.com/api/guilds/${guildId}/channels`, {
+    headers: { Authorization: `Bot ${process.env.BOT_TOKEN}` }
+  });
+  const channels = await response.json();
+  const categories = channels.filter(c => c.type === 4); // Type 4 = Category
+  res.json({ categories });
 });
 
 // === Start Server ===

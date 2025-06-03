@@ -1,3 +1,4 @@
+// models/TicketPanel.js
 const mongoose = require('mongoose');
 
 const TicketPanelSchema = new mongoose.Schema({
@@ -7,11 +8,11 @@ const TicketPanelSchema = new mongoose.Schema({
     description: String,
     color: String
   },
-  emoji: { type: String }, // <-- make sure this is here!
-  // Add these to TicketPanelSchema
-categoryId: { type: String }, // where tickets open
-message: { type: String }, // additional message
-transcript: { type: Boolean, default: false },
+  emoji: { type: String }, // ✅ emoji support
+  categoryId: { type: String }, // ✅ where tickets open
+  message: { type: String }, // ✅ optional extra message
+  transcript: { type: Boolean, default: false }, // ✅ toggle
+  guildId: { type: String, required: true } // ✅ new: ties the panel to the server
 });
 
 module.exports = mongoose.model('TicketPanel', TicketPanelSchema);
