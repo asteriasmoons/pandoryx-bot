@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const TicketPanel = require('../models/TicketPanel');
-const { sendTicketPanelEditor } = require('../utils/ticketPanelUi.js');
+const { sendTicketPanelEditor } = require('../events/ticketPanelUi');
 
 module.exports = {
   data: new SlashCommandBuilder()
