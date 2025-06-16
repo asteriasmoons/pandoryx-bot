@@ -9,17 +9,15 @@ const {
   ButtonStyle, 
   PermissionFlagsBits, 
   ChannelType,
-  AttachmentBuilder // <--- Added for transcript
+  AttachmentBuilder
 } = require('discord.js');
 const EmbedModel = require('../models/Embed');
 const TicketPanel = require('../models/TicketPanel');
 const TicketInstance = require('../models/TicketInstance');
 const { buildEmbed } = require('../utils/embedEditorUi');
 
-// --- SET YOUR STAFF ROLE ID HERE ---
-const staffRoleId = "1368040155793068112"; // <--- Replace with your staff role ID
+const staffRoleId = "1368040155793068112";
 
-// --- TRANSCRIPT GENERATION FUNCTION ---
 async function generateTranscript(channel) {
   let messages = [];
   let lastId;
@@ -41,21 +39,68 @@ async function generateTranscript(channel) {
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
-    // Helper: Staff check
     function isStaff(interaction) {
       return staffRoleId && interaction.member.roles.cache.has(staffRoleId);
     }
 
-    // --- ALL BUTTON HANDLERS ---
+    // === BUTTON HANDLERS ===
     if (interaction.isButton()) {
-      // --- EMBED EDITOR BUTTON HANDLER ---
+      // --- TICKETPANEL: Toggle Transcript ---
+    if (interaction.customId.startsWith('ticketpanel_toggle_transcript:')) {
+    const panelId = interaction.customId.split(':')[1];
+    const panel = await TicketPanel.findById(panelId);
+    if (!panel) {
+      return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+    }
+
+    panel.transcriptsEnabled = !panel.transcriptsEnabled;
+    await panel.save();
+
+      return interaction.reply({
+      content: `📝 Transcript generation has been **${panel.transcriptsEnabled ? 'enabled' : 'disabled'}** for this panel.`,
+    });
+  }
+
+    // --- TICKETPANEL: Publish Preview ---
+    if (interaction.customId.startsWith('ticketpanel_publish_preview:')) {
+    const panelId = interaction.customId.split(':')[1];
+    const panel = await TicketPanel.findById(panelId);
+    if (!panel) {
+     return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+   }
+
+    const channel = interaction.guild.channels.cache.get(panel.postChannelId);
+    if (!channel || !channel.isTextBased()) {
+    return interaction.reply({ content: '❌ Panel post channel is invalid or not set.', ephemeral: false });
+   }
+
+    const button = new ButtonBuilder()
+    .setCustomId(`open_ticket_modal:${panel.name}`)
+    .setLabel(panel.buttonLabel || 'Open Ticket')
+    .setStyle(ButtonStyle.Primary);
+
+    if (panel.emoji) button.setEmoji(panel.emoji);
+
+    const row = new ActionRowBuilder().addComponents(button);
+
+    const embed = new EmbedBuilder()
+    .setTitle(panel.embed?.title || 'Need Help?')
+    .setDescription(panel.embed?.description || 'Click the button below to open a ticket.')
+    .setColor(panel.embed?.color || 0x5865F2);
+
+    await channel.send({ embeds: [embed], components: [row] });
+
+       return interaction.reply({
+       content: `✅ Ticket panel preview has been posted to <#${channel.id}>.`,
+     });
+   }
+
+      // --- EMBED EDITOR BUTTON HANDLER (unchanged) ---
       const [prefix, action, section, embedId] = interaction.customId.split('_');
       if (prefix === 'embed' && action === 'edit') {
-        // Fetch embed from DB
         const doc = await EmbedModel.findById(embedId);
         if (!doc) return interaction.reply({ content: 'Embed not found.' });
 
-        // Show modal for the relevant section
         if (section === 'basic') {
           const modal = new ModalBuilder()
             .setCustomId(`embed_modal_basic_${embedId}`)
@@ -173,163 +218,72 @@ module.exports = {
             );
           return interaction.showModal(modal);
         }
-        return; // Prevent fallthrough
       }
 
-      // --- TICKET: Open Modal Button ---
-      if (interaction.customId.startsWith('open_ticket_modal:')) {
-        const panelName = interaction.customId.split(':')[1];
+      // === New Ticket Panel Buttons ===
+
+      // 📝 Edit Greeting Modal
+      if (interaction.customId.startsWith('ticketpanel_edit_greeting:')) {
+        const panelId = interaction.customId.split(':')[1];
+        const panel = await TicketPanel.findById(panelId);
+        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+
         const modal = new ModalBuilder()
-          .setCustomId(`ticket_modal_submit:${panelName}`)
-          .setTitle('Open a Ticket')
+          .setCustomId(`ticketpanel_modal_greeting:${panelId}`)
+          .setTitle('Set Greeting Message')
           .addComponents(
             new ActionRowBuilder().addComponents(
               new TextInputBuilder()
-                .setCustomId('issue')
-                .setLabel('What do you need help with?')
+                .setCustomId('greeting_text')
+                .setLabel('Message shown when ticket is opened')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true)
+                .setValue(panel.greeting || '')
             )
           );
+
         return interaction.showModal(modal);
       }
 
-      // --- TICKET: Claim Button ---
-      if (interaction.customId === 'ticket_claim') {
-        if (!isStaff(interaction)) {
-          return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle('Permission Denied')
-                .setDescription('Only staff can claim tickets.')
-                .setColor(0x663399)
-            ]
-          });
-        }
-
-        const msg = await interaction.message.fetch();
-        const row = ActionRowBuilder.from(msg.components[0]);
-        row.components[0].setDisabled(true).setLabel(`Claimed by ${interaction.user.username}`);
-
-        await msg.edit({
-          components: [row],
-          embeds: [
-            EmbedBuilder.from(msg.embeds[0])
-              .setFooter({ text: `Claimed by ${interaction.user.tag}` })
-          ]
-        });
+      // 🎭 Set Emoji via message
+      if (interaction.customId.startsWith('ticketpanel_set_emoji:')) {
+        const panelId = interaction.customId.split(':')[1];
+        const panel = await TicketPanel.findById(panelId);
+        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
 
         await interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle('Ticket Claimed')
-              .setDescription(`Ticket has been claimed by <@${interaction.user.id}>.`)
-              .setColor(0x663399)
-          ]
+          content: 'Please send the emoji you want to use (standard or custom). You have 30 seconds.',
         });
-        return;
-      }
 
-      // --- TICKET: Close Button ---
-      if (interaction.customId === 'ticket_close') {
-        if (!isStaff(interaction)) {
-          return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle('Permission Denied')
-                .setDescription('Only staff can close tickets.')
-                .setColor(0x663399)
-            ]
-          });
-        }
+        const filter = m => m.author.id === interaction.user.id;
+        const collector = interaction.channel.createMessageCollector({ filter, max: 1, time: 30000 });
 
-        const ticketUser = (await TicketInstance.findOne({ channelId: interaction.channel.id }))?.userId;
-        if (ticketUser) {
-          await interaction.channel.permissionOverwrites.edit(ticketUser, { ViewChannel: false });
-        }
+        collector.on('collect', async msg => {
+          const emoji = msg.content.trim();
+          const isCustom = /^<a?:\w+:\d+>$/.test(emoji);
+          const isUnicode = /\p{Emoji}/u.test(emoji);
 
-        await interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle('Ticket Closed')
-              .setDescription('This ticket has been closed. Staff can still view this channel.')
-              .setColor(0x663399)
-          ]
-        });
-        return;
-      }
-
-      // --- TICKET: Delete Button ---
-      if (interaction.customId === 'ticket_delete') {
-        if (!isStaff(interaction)) {
-          return interaction.reply({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle('Permission Denied')
-                .setDescription('Only staff can delete tickets.')
-                .setColor(0x663399)
-            ]
-          });
-        }
-
-        // --- TRANSCRIPT LOGIC START ---
-        try {
-          const ticketInstance = await TicketInstance.findOne({ channelId: interaction.channel.id });
-
-          // Generate transcript
-          const transcriptBuffer = await generateTranscript(interaction.channel);
-          const attachment = new AttachmentBuilder(transcriptBuffer, { name: `transcript-${interaction.channel.name}.txt` });
-
-          // Send to log channel
-          const GuildSetting = require('../models/GuildSetting');
-          const settings = await GuildSetting.findOne({ guildId: interaction.guild.id });
-          const logChannelId = settings?.transcriptChannelId;
-          const logChannel = logChannelId ? interaction.guild.channels.cache.get(logChannelId) : null;
-          
-          if (logChannel) {
-            await logChannel.send({
-              content: `Transcript for ticket ${interaction.channel.name}:`,
-              files: [attachment]
-            });
+          if (!isCustom && !isUnicode) {
+            return msg.reply('❌ Invalid emoji. Please use a standard or custom emoji.');
           }
 
-          // Send to user
-          if (ticketInstance && ticketInstance.userId) {
-            try {
-              const user = await interaction.client.users.fetch(ticketInstance.userId);
-              await user.send({
-                content: `Here is the transcript for your closed ticket:`,
-                files: [attachment]
-              });
-            } catch (err) {
-              // Ignore if user DMs are closed
-            }
-            ticketInstance.status = 'closed';
-            await ticketInstance.save();
-          }
-        } catch (err) {
-          // If any error occurs, still proceed to delete the channel
-          console.error('Error generating/sending transcript:', err);
-        }
-        // --- TRANSCRIPT LOGIC END ---
+          panel.emoji = emoji;
+          await panel.save();
 
-        await interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle('Ticket Deleted')
-              .setDescription('This ticket channel will be deleted in 5 seconds.')
-              .setColor(0x663399)
-          ]
+          await msg.reply(`✅ Emoji set to ${emoji}`);
         });
-        setTimeout(() => {
-          interaction.channel.delete().catch(() => {});
-        }, 5000);
-        return;
+
+        collector.on('end', collected => {
+          if (!collected.size) {
+            interaction.followUp({ content: '⏱️ Emoji input timed out.', ephemeral: false });
+          }
+        });
       }
     }
 
-    // --- EMBED EDITOR MODAL HANDLER ---
+    // === MODAL HANDLERS ===
     if (interaction.isModalSubmit()) {
+      // Embed modal handling
       const [prefix, type, section, embedId] = interaction.customId.split('_');
       if (prefix === 'embed' && type === 'modal') {
         const doc = await EmbedModel.findById(embedId);
@@ -366,7 +320,6 @@ module.exports = {
 
         await doc.save();
 
-        // Edit the original reply with the updated embed and buttons
         return interaction.update({
           content: `**Editing Embed:** \`${doc.name}\` (updated!)`,
           embeds: [buildEmbed(doc)],
@@ -388,94 +341,147 @@ module.exports = {
         });
       }
 
-      // --- TICKET: Modal Submit (Create Ticket Channel) ---
-      if (interaction.customId.startsWith('ticket_modal_submit:')) {
-        const panelName = interaction.customId.split(':')[1];
-        const issue = interaction.fields.getTextInputValue('issue');
+      // 📝 Save greeting
+      if (interaction.customId.startsWith('ticketpanel_modal_greeting:')) {
+        const panelId = interaction.customId.split(':')[1];
+        const panel = await TicketPanel.findById(panelId);
+        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
 
-        // Create ticket channel
-        const permissionOverwrites = [
-          {
-            id: interaction.guild.roles.everyone,
-            deny: [PermissionFlagsBits.ViewChannel],
-          },
-          {
-            id: interaction.user.id,
-            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-          },
-        ];
-        if (staffRoleId) {
-          permissionOverwrites.push({
-            id: staffRoleId,
-            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-          });
-        }
+        const greeting = interaction.fields.getTextInputValue('greeting_text');
+        panel.greeting = greeting;
+        await panel.save();
 
-        const ticketChannel = await interaction.guild.channels.create({
-          name: `ticket-${interaction.user.username}`.toLowerCase(),
-          type: ChannelType.GuildText,
-          permissionOverwrites,
-        });
-
-        await TicketInstance.create({
-          ticketId: ticketChannel.id,
-          userId: interaction.user.id,
-          panelName,
-          channelId: ticketChannel.id,
-          status: 'open',
-          content: { issue }
-        });
-
-        // --- ADD BUTTONS ---
-        const claimBtn = new ButtonBuilder()
-          .setCustomId('ticket_claim')
-          .setLabel('Claim')
-          .setStyle(ButtonStyle.Primary);
-
-        const closeBtn = new ButtonBuilder()
-          .setCustomId('ticket_close')
-          .setLabel('Close')
-          .setStyle(ButtonStyle.Secondary);
-
-        const deleteBtn = new ButtonBuilder()
-          .setCustomId('ticket_delete')
-          .setLabel('Delete')
-          .setStyle(ButtonStyle.Secondary);
-
-        const row = new ActionRowBuilder().addComponents(claimBtn, closeBtn, deleteBtn);
-
-        await ticketChannel.send({
-          content: `<@${interaction.user.id}>`,
-          embeds: [
-            new EmbedBuilder()
-              .setTitle('Ticket Opened')
-              .setDescription(`**Issue:**\n${issue}`)
-              .setColor(0x5865F2)
-          ],
-          components: [row]
-        });
-
-        await interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle('Ticket Created')
-              .setDescription(`Your ticket has been created: <#${ticketChannel.id}>`)
-              .setColor(0x57F287)
-          ]
-        });
-        return;
+        return interaction.reply({ content: '✅ Greeting message updated.' });
       }
     }
 
-    // --- SLASH COMMAND HANDLER (keep this for your commands to work) ---
+    // === TICKET: Modal Submit (Create Ticket Channel) ===
+if (interaction.customId.startsWith('ticket_modal_submit:')) {
+  const panelName = interaction.customId.split(':')[1];
+  const panel = await TicketPanel.findOne({
+    guildId: interaction.guild.id,
+    panelName
+  });
+
+  if (!panel) {
+    return interaction.reply({
+      content: `❌ Ticket panel \`${panelName}\` not found.`,
+      ephemeral: false
+    });
+  }
+
+  const issue = interaction.fields.getTextInputValue('issue');
+
+  const overwrites = [
+    {
+      id: interaction.guild.roles.everyone,
+      deny: ['ViewChannel']
+    },
+    {
+      id: interaction.user.id,
+      allow: ['ViewChannel', 'SendMessages']
+    }
+  ];
+
+  if (staffRoleId) {
+    overwrites.push({
+      id: staffRoleId,
+      allow: ['ViewChannel', 'SendMessages']
+    });
+  }
+
+  const channelOptions = {
+    name: `ticket-${interaction.user.username}`.toLowerCase(),
+    type: ChannelType.GuildText,
+    permissionOverwrites: overwrites
+  };
+
+  if (panel.ticketCategoryId) {
+    channelOptions.parent = panel.ticketCategoryId;
+  }
+
+  const ticketChannel = await interaction.guild.channels.create(channelOptions);
+
+  await TicketInstance.create({
+    ticketId: ticketChannel.id,
+    userId: interaction.user.id,
+    panelName,
+    channelId: ticketChannel.id,
+    status: 'open',
+    content: { issue }
+  });
+
+  const claimBtn = new ButtonBuilder()
+    .setCustomId('ticket_claim')
+    .setLabel('Claim')
+    .setStyle(ButtonStyle.Primary);
+
+  const closeBtn = new ButtonBuilder()
+    .setCustomId('ticket_close')
+    .setLabel('Close')
+    .setStyle(ButtonStyle.Secondary);
+
+  const deleteBtn = new ButtonBuilder()
+    .setCustomId('ticket_delete')
+    .setLabel('Delete')
+    .setStyle(ButtonStyle.Secondary);
+
+  const row = new ActionRowBuilder().addComponents(claimBtn, closeBtn, deleteBtn);
+
+  await ticketChannel.send({
+    content: `<@${interaction.user.id}>`,
+    embeds: [
+      new EmbedBuilder()
+        .setTitle('Ticket Opened')
+        .setDescription(`**${panel.greeting}**\n\n**Issue:**\n${issue}`)
+        .setColor(panel.embed?.color || 0x5865F2)
+    ],
+    components: [row]
+  });
+
+  return interaction.reply({
+    content: `✅ Your ticket has been created: <#${ticketChannel.id}>`,
+    ephemeral: false
+  });
+}
+
+    // === SELECT MENU HANDLERS ===
+    if (interaction.isStringSelectMenu()) {
+   // Set post channel for panel
+    if (interaction.customId.startsWith('ticketpanel_select_post_channel:')) {
+    const panelId = interaction.customId.split(':')[1];
+    const panel = await TicketPanel.findById(panelId);
+    if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+
+    const selectedChannelId = interaction.values[0];
+    panel.postChannelId = selectedChannelId;
+    await panel.save();
+
+      return interaction.reply({ content: `✅ Post channel set to <#${selectedChannelId}>.`, ephemeral: false });
+    }
+
+    // Set category for new tickets
+    if (interaction.customId.startsWith('ticketpanel_select_category:')) {
+    const panelId = interaction.customId.split(':')[1];
+    const panel = await TicketPanel.findById(panelId);
+    if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+
+    const selectedCategoryId = interaction.values[0];
+    panel.ticketCategoryId = selectedCategoryId;
+    await panel.save();
+
+      return interaction.reply({ content: `✅ Ticket category set to <#${selectedCategoryId}>.`, ephemeral: false });
+     }
+   }
+
+    // === SLASH COMMAND HANDLER ===
     if (interaction.isChatInputCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
       try {
-        // Ensure the cache object exists
-if (!client.reactionRoleCache) {
-  client.reactionRoleCache = {};
-}
+        if (!client.reactionRoleCache) {
+          client.reactionRoleCache = {};
+        }
         await command.execute(interaction, client, client.reactionRoleCache);
       } catch (error) {
         console.error(error);
