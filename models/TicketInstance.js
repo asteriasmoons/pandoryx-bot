@@ -30,6 +30,9 @@ const TicketInstanceSchema = new mongoose.Schema({
 
   // (Optional) Modal responses or ticket content
   content: { type: Object },
+
+  // (Optional) User ID of the staff member who claimed this ticket
+  claimedBy: { type: String, default: null },
 });
 
 module.exports = mongoose.model('TicketInstance', TicketInstanceSchema);

@@ -12,7 +12,7 @@ function buildTicketEmbed(panel) {
   return new EmbedBuilder()
     .setTitle(panel.embed?.title || 'Untitled Ticket Panel')
     .setDescription(panel.embed?.description || '*No description set yet.*')
-    .setColor(panel.embed?.color || '#5865F2')
+    .setColor(panel.embed?.color || '#7d04c3')
     .setFooter({ text: `Panel Name: ${panel.panelName}` });
 }
 
@@ -75,7 +75,7 @@ async function sendTicketPanelEditor(interaction, panel) {
     new ButtonBuilder()
       .setCustomId(`ticketpanel_publish_preview:${panel._id}`)
       .setLabel('Preview & Publish')
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Primary)
   );
 
   await interaction.reply({

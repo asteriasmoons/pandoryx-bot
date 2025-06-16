@@ -47,12 +47,12 @@ module.exports = {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
         if (!panel) {
-          return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+          return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         }
         panel.transcriptsEnabled = !panel.transcriptsEnabled;
         await panel.save();
         return interaction.reply({
-          content: `📝 Transcript generation has been **${panel.transcriptsEnabled ? 'enabled' : 'disabled'}** for this panel.`,
+          content: `Transcript generation has been **${panel.transcriptsEnabled ? 'enabled' : 'disabled'}** for this panel.`,
         });
       }
 
@@ -61,18 +61,18 @@ module.exports = {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
         if (!panel) {
-          return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+          return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         }
 
         const channel = interaction.guild.channels.cache.get(panel.postChannelId);
         if (!channel || !channel.isTextBased()) {
-          return interaction.reply({ content: '❌ Panel post channel is invalid or not set.', ephemeral: false });
+          return interaction.reply({ content: 'Panel post channel is invalid or not set.', ephemeral: false });
         }
 
         const button = new ButtonBuilder()
           .setCustomId(`open_ticket_modal:${panel.panelName}`)
           .setLabel(panel.buttonLabel || 'Open Ticket')
-          .setStyle(ButtonStyle.Primary);
+          .setStyle(ButtonStyle.Secondary);
 
         if (panel.emoji) button.setEmoji(panel.emoji);
 
@@ -91,7 +91,7 @@ module.exports = {
         await channel.send({ embeds: [embed], components: [row] });
 
         return interaction.reply({
-          content: `✅ Ticket panel preview has been posted to <#${channel.id}>.`,
+          content: `Ticket panel preview has been posted to <#${channel.id}>.`,
         });
       }
 
@@ -226,7 +226,7 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_edit_greeting:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         const modal = new ModalBuilder()
           .setCustomId(`ticketpanel_modal_greeting:${panelId}`)
@@ -250,7 +250,7 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_edit_embed_basic:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         const modal = new ModalBuilder()
           .setCustomId(`ticketpanel_modal_embed_basic:${panelId}`)
@@ -278,7 +278,7 @@ module.exports = {
                 .setLabel('Embed Color (Hex)')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(false)
-                .setValue(panel.embed?.color || '#5865F2')
+                .setValue(panel.embed?.color || '#7d04c3')
             )
           );
         return interaction.showModal(modal);
@@ -288,7 +288,7 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_edit_embed_author:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         const modal = new ModalBuilder()
           .setCustomId(`ticketpanel_modal_embed_author:${panelId}`)
@@ -318,7 +318,7 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_edit_embed_footer:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         const modal = new ModalBuilder()
           .setCustomId(`ticketpanel_modal_embed_footer:${panelId}`)
@@ -356,7 +356,7 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_edit_embed_images:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         const modal = new ModalBuilder()
           .setCustomId(`ticketpanel_modal_embed_images:${panelId}`)
@@ -386,14 +386,14 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_set_emoji:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         await interaction.reply({
           content: 'Please send the emoji you want to use (standard or custom). You have 30 seconds.',
         });
 
         const filter = m => m.author.id === interaction.user.id;
-        const collector = interaction.channel.createMessageCollector({ filter, max: 1, time: 30000 });
+        const collector = interaction.channel.createMessageCollector({ filter, max: 1, time: 180000 });
 
         collector.on('collect', async msg => {
           const emoji = msg.content.trim();
@@ -401,22 +401,51 @@ module.exports = {
           const isUnicode = /\p{Emoji}/u.test(emoji);
 
           if (!isCustom && !isUnicode) {
-            return msg.reply('❌ Invalid emoji. Please use a standard or custom emoji.');
+            return msg.reply('Invalid emoji. Please use a standard or custom emoji.');
           }
 
           panel.emoji = emoji;
           await panel.save();
 
-          await msg.reply(`✅ Emoji set to ${emoji}`);
+          await msg.reply(`Emoji set to ${emoji}`);
         });
 
         collector.on('end', collected => {
           if (!collected.size) {
-            interaction.followUp({ content: '⏱️ Emoji input timed out.', ephemeral: false });
+            interaction.followUp({ content: 'Emoji input timed out.', ephemeral: false });
           }
         });
       }
     }
+
+    // --- OPEN TICKET BUTTON HANDLER ---
+if (interaction.isButton() && interaction.customId.startsWith('open_ticket_modal:')) {
+  const panelName = interaction.customId.split(':')[1];
+  // Find the panel to make sure it exists (optional)
+  const panel = await TicketPanel.findOne({
+    guildId: interaction.guild.id,
+    panelName
+  });
+  if (!panel) {
+    return interaction.reply({
+      content: `Ticket panel \`${panelName}\` not found.`,
+      ephemeral: false
+    });
+  }
+  const modal = new ModalBuilder()
+    .setCustomId(`ticket_modal_submit:${panelName}`)
+    .setTitle('Open a Ticket')
+    .addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('issue')
+          .setLabel('Describe your issue')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+      )
+    );
+  return interaction.showModal(modal);
+}
 
     // === MODAL HANDLERS ===
     if (interaction.isModalSubmit()) {
@@ -484,33 +513,33 @@ module.exports = {
       if (interaction.customId.startsWith('ticketpanel_modal_embed_basic:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         function emptyToNull(str) { return (typeof str === 'string' && str.trim() === '') ? null : str; }
         panel.embed.title = emptyToNull(interaction.fields.getTextInputValue('title'));
         panel.embed.description = emptyToNull(interaction.fields.getTextInputValue('description'));
-        panel.embed.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#5865F2';
+        panel.embed.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#7d04c3';
         await panel.save();
-        return interaction.reply({ content: '✅ Ticket panel embed (basic info) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (basic info) updated.' });
       }
 
       // Author
       if (interaction.customId.startsWith('ticketpanel_modal_embed_author:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         function emptyToNull(str) { return (typeof str === 'string' && str.trim() === '') ? null : str; }
         if (!panel.embed.author) panel.embed.author = {};
         panel.embed.author.name = emptyToNull(interaction.fields.getTextInputValue('author_name'));
         panel.embed.author.icon_url = emptyToNull(interaction.fields.getTextInputValue('author_icon'));
         await panel.save();
-        return interaction.reply({ content: '✅ Ticket panel embed (author) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (author) updated.' });
       }
 
       // Footer
       if (interaction.customId.startsWith('ticketpanel_modal_embed_footer:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         function emptyToNull(str) { return (typeof str === 'string' && str.trim() === '') ? null : str; }
         if (!panel.embed.footer) panel.embed.footer = {};
         panel.embed.footer.text = emptyToNull(interaction.fields.getTextInputValue('footer_text'));
@@ -518,116 +547,272 @@ module.exports = {
         const timestampInput = interaction.fields.getTextInputValue('footer_timestamp').toLowerCase();
         panel.embed.footer.timestamp = timestampInput === 'yes' || timestampInput === 'true';
         await panel.save();
-        return interaction.reply({ content: '✅ Ticket panel embed (footer) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (footer) updated.' });
       }
 
       // Images
       if (interaction.customId.startsWith('ticketpanel_modal_embed_images:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         function emptyToNull(str) { return (typeof str === 'string' && str.trim() === '') ? null : str; }
         panel.embed.thumbnail = emptyToNull(interaction.fields.getTextInputValue('thumbnail'));
         panel.embed.image = emptyToNull(interaction.fields.getTextInputValue('image'));
         await panel.save();
-        return interaction.reply({ content: '✅ Ticket panel embed (images) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (images) updated.' });
       }
 
       // Greeting (already above but for clarity)
       if (interaction.customId.startsWith('ticketpanel_modal_greeting:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         panel.greeting = interaction.fields.getTextInputValue('greeting_text');
         await panel.save();
-        return interaction.reply({ content: '✅ Greeting message updated.' });
+        return interaction.reply({ content: 'Greeting message updated.' });
       }
 
       // Panel name modal
       if (interaction.customId.startsWith('ticketpanel_modal_name:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         const newName = interaction.fields.getTextInputValue('panel_name').trim().toLowerCase();
         const exists = await TicketPanel.findOne({ guildId: interaction.guild.id, panelName: newName, _id: { $ne: panelId } });
-        if (exists) return interaction.reply({ content: `❌ Panel name \`${newName}\` is already in use.`, ephemeral: false });
+        if (exists) return interaction.reply({ content: `Panel name \`${newName}\` is already in use.`, ephemeral: false });
         panel.panelName = newName;
         await panel.save();
-        return interaction.reply({ content: `✅ Panel name updated to \`${newName}\`.` });
+        return interaction.reply({ content: `Panel name updated to \`${newName}\`.` });
       }
     }
 
     // === TICKET: Modal Submit (Create Ticket Channel) ===
     if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal_submit:')) {
-      const panelName = interaction.customId.split(':')[1];
-      const panel = await TicketPanel.findOne({
-        guildId: interaction.guild.id,
-        panelName
-      });
-      if (!panel) {
-        return interaction.reply({
-          content: `❌ Ticket panel \`${panelName}\` not found.`,
-          ephemeral: false
-        });
-      }
-      const issue = interaction.fields.getTextInputValue('issue');
+    const panelName = interaction.customId.split(':')[1];
+    const panel = await TicketPanel.findOne({
+    guildId: interaction.guild.id,
+    panelName
+  });
+  if (!panel) {
+    return interaction.reply({
+      content: `Ticket panel \`${panelName}\` not found.`,
+      ephemeral: false
+    });
+  }
+  const issue = interaction.fields.getTextInputValue('issue');
 
-      const overwrites = [
-        {
-          id: interaction.guild.roles.everyone,
-          deny: ['ViewChannel']
-        },
-        {
-          id: interaction.user.id,
-          allow: ['ViewChannel', 'SendMessages']
-        }
-      ];
-      if (staffRoleId) {
-        overwrites.push({
-          id: staffRoleId,
-          allow: ['ViewChannel', 'SendMessages']
-        });
-      }
-      const channelOptions = {
-        name: `ticket-${interaction.user.username}`.toLowerCase(),
-        type: ChannelType.GuildText,
-        permissionOverwrites: overwrites
-      };
-      if (panel.ticketCategoryId) {
-        channelOptions.parent = panel.ticketCategoryId;
-      }
-      const ticketChannel = await interaction.guild.channels.create(channelOptions);
-
-      await TicketInstance.create({
-        ticketId: ticketChannel.id,
-        userId: interaction.user.id,
-        panelName,
-        channelId: ticketChannel.id,
-        status: 'open',
-        content: { issue }
-      });
-
-      const claimBtn = new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim').setStyle(ButtonStyle.Primary);
-      const closeBtn = new ButtonBuilder().setCustomId('ticket_close').setLabel('Close').setStyle(ButtonStyle.Secondary);
-      const deleteBtn = new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete').setStyle(ButtonStyle.Secondary);
-      const row = new ActionRowBuilder().addComponents(claimBtn, closeBtn, deleteBtn);
-
-      await ticketChannel.send({
-        content: `<@${interaction.user.id}>`,
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('Ticket Opened')
-            .setDescription(`**${panel.greeting}**\n\n**Issue:**\n${issue}`)
-            .setColor(panel.embed?.color || 0x5865F2)
-        ],
-        components: [row]
-      });
-
-      return interaction.reply({
-        content: `✅ Your ticket has been created: <#${ticketChannel.id}>`,
-        ephemeral: false
-      });
+  const overwrites = [
+    {
+      id: interaction.guild.roles.everyone,
+      deny: ['ViewChannel']
+    },
+    {
+      id: interaction.user.id,
+      allow: ['ViewChannel', 'SendMessages']
     }
+  ];
+
+  // If you want to add a specific mod role, add it here, e.g.:
+  // overwrites.push({ id: 'MOD_ROLE_ID', allow: ['ViewChannel', 'SendMessages'] });
+
+  const channelOptions = {
+    name: `ticket-${interaction.user.username}`.toLowerCase(),
+    type: ChannelType.GuildText,
+    permissionOverwrites: overwrites
+  };
+  if (panel.ticketCategoryId) {
+    channelOptions.parent = panel.ticketCategoryId;
+  }
+  const ticketChannel = await interaction.guild.channels.create(channelOptions);
+
+  await TicketInstance.create({
+    ticketId: ticketChannel.id,
+    userId: interaction.user.id,
+    panelName,
+    channelId: ticketChannel.id,
+    status: 'open',
+    content: { issue }
+  });
+
+  const claimBtn = new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim').setStyle(ButtonStyle.Secondary);
+  const closeBtn = new ButtonBuilder().setCustomId('ticket_close').setLabel('Close').setStyle(ButtonStyle.Secondary);
+  const deleteBtn = new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete').setStyle(ButtonStyle.Secondary);
+  const row = new ActionRowBuilder().addComponents(claimBtn, closeBtn, deleteBtn);
+
+  await ticketChannel.send({
+    content: `<@${interaction.user.id}>`,
+    embeds: [
+      new EmbedBuilder()
+        .setTitle('Ticket Opened')
+        .setDescription(`**${panel.greeting}**\n\n**Issue:**\n${issue}`)
+        .setColor(panel.embed?.color || 0x7d04c3)
+    ],
+    components: [row]
+  });
+
+  return interaction.reply({
+    content: `Your ticket has been created: <#${ticketChannel.id}>`,
+    ephemeral: true
+  });
+}
+
+// --- CLAIM BUTTON ---
+if (interaction.customId === 'ticket_claim') {
+  const ticket = await TicketInstance.findOne({ channelId: interaction.channel.id });
+  if (!ticket) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xc304aa)
+        .setDescription('Ticket not found in database.')],
+      ephemeral: true
+    });
+  }
+
+  // Only the ticket opener or someone with ManageGuild can claim
+  if (
+    interaction.user.id !== ticket.userId &&
+    !interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)
+  ) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xc304aa)
+        .setDescription("You don't have permission to claim this ticket.")],
+      ephemeral: true
+    });
+  }
+
+  // OPTIONAL: prevent double claiming
+  if (ticket.claimedBy) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0x7d04c3)
+        .setDescription(`This ticket is already claimed by <@${ticket.claimedBy}>.`)],
+      ephemeral: true
+    });
+  }
+
+  // --- UPDATE TICKET DB ---
+  ticket.claimedBy = interaction.user.id;
+  await ticket.save();
+
+  await interaction.reply({
+    embeds: [new EmbedBuilder()
+      .setColor(0x7d04c3)
+      .setDescription(`Ticket claimed by <@${interaction.user.id}>.`)],
+    ephemeral: false
+  });
+}
+
+// --- CLOSE BUTTON ---
+if (interaction.customId === 'ticket_close') {
+  const ticket = await TicketInstance.findOne({ channelId: interaction.channel.id });
+  if (!ticket) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xc304aa)
+        .setDescription('Ticket not found in database.')],
+      ephemeral: true
+    });
+  }
+  if (interaction.user.id !== ticket.userId && !interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xc304aa)
+        .setDescription("🚫 You don't have permission to close this ticket.")],
+      ephemeral: true
+    });
+  }
+  await interaction.reply({
+    embeds: [new EmbedBuilder()
+      .setColor(0xc304aa)
+      .setDescription('This ticket will be closed in 5 seconds.')],
+    ephemeral: false
+  });
+  setTimeout(async () => {
+    await interaction.channel.delete().catch(() => {});
+  }, 5000);
+}
+
+// --- DELETE BUTTON ---
+if (interaction.customId === 'ticket_delete') {
+  // Only ticket opener or ManageGuild can delete
+  const ticket = await TicketInstance.findOne({ channelId: interaction.channel.id });
+  if (
+    !ticket ||
+    (
+      interaction.user.id !== ticket.userId &&
+      !interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)
+    )
+  ) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xc304aa)
+        .setDescription("You don't have permission to delete this ticket.")],
+      ephemeral: true
+    });
+  }
+
+  // Send confirmation message
+  return interaction.reply({
+    embeds: [new EmbedBuilder()
+      .setColor(0xfef2a8)
+      .setDescription('Are you **sure** you want to delete this ticket?')],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('ticket_delete_confirm')
+          .setLabel('Yes, Delete')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('ticket_delete_cancel')
+          .setLabel('Cancel')
+          .setStyle(ButtonStyle.Secondary)
+      )
+    ],
+    ephemeral: true
+  });
+}
+
+// --- CONFIRM DELETION ---
+if (interaction.customId === 'ticket_delete_confirm') {
+  const ticket = await TicketInstance.findOne({ channelId: interaction.channel.id });
+  if (
+    !ticket ||
+    (
+      interaction.user.id !== ticket.userId &&
+      !interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)
+    )
+  ) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xed429b)
+        .setDescription("You don't have permission to delete this ticket.")],
+      ephemeral: true
+    });
+  }
+
+  await interaction.channel.delete('Ticket deleted by user or mod');
+  // Optionally, update the ticket in DB
+  if (ticket) {
+    ticket.status = 'closed';
+    ticket.closedAt = new Date();
+    ticket.closeReason = 'Deleted by user or moderator';
+    await ticket.save();
+  }
+  // No need to reply: channel is gone!
+}
+
+// --- CANCEL DELETION ---
+if (interaction.customId === 'ticket_delete_cancel') {
+  return interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0xb6f9cb)
+        .setDescription('Ticket deletion cancelled.')
+    ],
+    components: [] // remove buttons
+  });
+}
 
     // === SELECT MENU HANDLERS ===
     if (interaction.isChannelSelectMenu()) {
