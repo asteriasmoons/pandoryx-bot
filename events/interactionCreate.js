@@ -13,7 +13,7 @@ const {
 const EmbedModel = require('../models/Embed');
 const TicketPanel = require('../models/TicketPanel');
 const TicketInstance = require('../models/TicketInstance');
-const { buildEmbed } = require('../utils/embedEditorUi');
+const { buildEmbed } = require('../utils/embedEditorUI');
 
 async function generateTranscript(channel) {
   let messages = [];
