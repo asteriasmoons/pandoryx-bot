@@ -645,7 +645,7 @@ if (interaction.isButton() && interaction.customId.startsWith('open_ticket_modal
       new EmbedBuilder()
         .setTitle('Ticket Opened')
         .setDescription(`**${panel.greeting}**\n\n**Issue:**\n${issue}`)
-        .setColor(panel.embed?.color || 0x7d04c3)
+        .setColor(panel.embed?.color || 0x5103aa)
     ],
     components: [row]
   });
@@ -662,7 +662,7 @@ if (interaction.customId === 'ticket_claim') {
   if (!ticket) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0xc304aa)
+        .setColor(0x9e10a0)
         .setDescription('Ticket not found in database.')],
       ephemeral: true
     });
@@ -675,7 +675,7 @@ if (interaction.customId === 'ticket_claim') {
   ) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0xc304aa)
+        .setColor(0x9e10a0)
         .setDescription("You don't have permission to claim this ticket.")],
       ephemeral: true
     });
@@ -685,7 +685,7 @@ if (interaction.customId === 'ticket_claim') {
   if (ticket.claimedBy) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0x7d04c3)
+        .setColor(0x5103aa)
         .setDescription(`This ticket is already claimed by <@${ticket.claimedBy}>.`)],
       ephemeral: true
     });
@@ -697,7 +697,7 @@ if (interaction.customId === 'ticket_claim') {
 
   await interaction.reply({
     embeds: [new EmbedBuilder()
-      .setColor(0x7d04c3)
+      .setColor(0x5103aa)
       .setDescription(`Ticket claimed by <@${interaction.user.id}>.`)],
     ephemeral: false
   });
@@ -709,7 +709,7 @@ if (interaction.customId === 'ticket_close') {
   if (!ticket) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0xc304aa)
+        .setColor(0x9e10a0)
         .setDescription('Ticket not found in database.')],
       ephemeral: true
     });
@@ -717,14 +717,14 @@ if (interaction.customId === 'ticket_close') {
   if (interaction.user.id !== ticket.userId && !interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0xc304aa)
-        .setDescription("🚫 You don't have permission to close this ticket.")],
+        .setColor(0x9e10a0)
+        .setDescription("You don't have permission to close this ticket.")],
       ephemeral: true
     });
   }
   await interaction.reply({
     embeds: [new EmbedBuilder()
-      .setColor(0xc304aa)
+      .setColor(0x9e10a0)
       .setDescription('This ticket will be closed in 5 seconds.')],
     ephemeral: false
   });
@@ -746,7 +746,7 @@ if (interaction.customId === 'ticket_delete') {
   ) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0xc304aa)
+        .setColor(0x9e10a0)
         .setDescription("You don't have permission to delete this ticket.")],
       ephemeral: true
     });
@@ -785,7 +785,7 @@ if (interaction.customId === 'ticket_delete_confirm') {
   ) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
-        .setColor(0xed429b)
+        .setColor(0x9e10a0)
         .setDescription("You don't have permission to delete this ticket.")],
       ephemeral: true
     });
@@ -807,7 +807,7 @@ if (interaction.customId === 'ticket_delete_cancel') {
   return interaction.update({
     embeds: [
       new EmbedBuilder()
-        .setColor(0xb6f9cb)
+        .setColor(0xcefbdc)
         .setDescription('Ticket deletion cancelled.')
     ],
     components: [] // remove buttons
@@ -820,7 +820,7 @@ if (interaction.customId === 'ticket_delete_cancel') {
       if (interaction.customId.startsWith('ticketpanel_select_post_channel:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         const selectedChannelId = interaction.values[0];
         panel.postChannelId = selectedChannelId;
         await panel.save();
@@ -830,7 +830,7 @@ if (interaction.customId === 'ticket_delete_cancel') {
       if (interaction.customId.startsWith('ticketpanel_select_category:')) {
         const panelId = interaction.customId.split(':')[1];
         const panel = await TicketPanel.findById(panelId);
-        if (!panel) return interaction.reply({ content: '❌ Panel not found.', ephemeral: false });
+        if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         const selectedCategoryId = interaction.values[0];
         panel.ticketCategoryId = selectedCategoryId;
         await panel.save();

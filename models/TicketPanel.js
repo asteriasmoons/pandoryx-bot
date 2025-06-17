@@ -16,7 +16,7 @@ const TicketPanelSchema = new mongoose.Schema({
   embed: {
     title: { type: String, default: '' },
     description: { type: String, default: '' },
-    color: { type: String, default: '#5865F2' },
+    color: { type: String, default: '#5103aa' },
     author: {
       name: { type: String, default: '' },
       icon_url: { type: String, default: '' }

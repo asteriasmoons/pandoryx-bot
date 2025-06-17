@@ -87,7 +87,7 @@ module.exports = {
         embed: {
           title: '',
           description: '',
-          color: '#7d04c3',
+          color: '#5103aa',
           author: { name: '', icon_url: '' },
           footer: { text: '', icon_url: '', timestamp: false },
           thumbnail: '',
@@ -175,7 +175,7 @@ module.exports = {
       const embed = new EmbedBuilder({
         title: panel.embed?.title || 'Need Help?',
         description: panel.embed?.description || 'Click the button below to open a ticket.',
-        color: panel.embed?.color || '#7d04c3',
+        color: panel.embed?.color || '#5103aa',
         author: panel.embed?.author?.name
           ? {
               name: panel.embed.author.name,

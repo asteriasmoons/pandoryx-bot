@@ -12,7 +12,7 @@ function buildTicketEmbed(panel) {
   return new EmbedBuilder()
     .setTitle(panel.embed?.title || 'Untitled Ticket Panel')
     .setDescription(panel.embed?.description || '*No description set yet.*')
-    .setColor(panel.embed?.color || '#7d04c3')
+    .setColor(panel.embed?.color || '#5103aa')
     .setFooter({ text: `Panel Name: ${panel.panelName}` });
 }
 
