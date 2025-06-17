@@ -1,7 +1,7 @@
 // commands/embed.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const EmbedModel = require('../models/Embed');
-const { sendEmbedEditor, buildEmbed } = require('../utils/embedEditorUi');
+const { sendEmbedEditor, buildEmbed } = require('../utils/embedEditorUI');
 
 module.exports = {
   data: new SlashCommandBuilder()
