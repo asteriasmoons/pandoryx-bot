@@ -5,7 +5,6 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ChannelSelectMenuBuilder,
-  RoleSelectMenuBuilder,
   ChannelType
 } = require('discord.js');
 
@@ -83,14 +82,6 @@ async function sendTicketPanelEditor(interaction, panel) {
       .addChannelTypes(ChannelType.GuildCategory)
   );
 
-  const roleMenuRow = new ActionRowBuilder().addComponents(
-  new RoleSelectMenuBuilder()
-    .setCustomId(`ticketpanel_select_ping_role:${panel._id}`)
-    .setPlaceholder('Select role to ping on ticket creation')
-    .setMinValues(0)
-    .setMaxValues(1) // allow selecting none or one role
-  );
-
   const finalizeRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`ticketpanel_toggle_transcript:${panel._id}`)
@@ -110,7 +101,6 @@ async function sendTicketPanelEditor(interaction, panel) {
       buttonsRow2,
       channelMenuRow,
       categoryMenuRow,
-      roleMenuRow,
       finalizeRow
     ]
   });

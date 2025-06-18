@@ -10,8 +10,6 @@ const TicketPanelSchema = new mongoose.Schema({
 
   postChannelId: { type: String, default: '' },
   ticketCategoryId: { type: String, default: '' },
-  // Add this to TicketPanelSchema
-  pingRoleId: { type: String, default: '' }, // The role to mention when a ticket is opened
 
 
   transcriptsEnabled: { type: Boolean, default: true },

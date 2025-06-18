@@ -901,7 +901,7 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
 
     // SEND the message in the ticket channel
     await ticketChannel.send({
-      content: panel.pingRoleId ? `<@&${panel.pingRoleId}>` : `<@${interaction.user.id}>`,
+      content: `<@${interaction.user.id}>`,
       embeds: [greetingEmbed],
       components: [row]
     });
@@ -1103,20 +1103,6 @@ if (interaction.customId === 'ticket_delete_cancel') {
         panel.ticketCategoryId = selectedCategoryId;
         await panel.save();
         return interaction.reply({ content: `✅ Ticket category set to <#${selectedCategoryId}>.`, ephemeral: false });
-      }
-      // New role select menu
-      if (interaction.customId.startsWith('ticketpanel_select_ping_role:')) {
-      const panelId = interaction.customId.split(':')[1];
-      const panel = await TicketPanel.findById(panelId);
-      if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: true });
-      const selectedRoleId = interaction.values[0] || '';
-      panel.pingRoleId = selectedRoleId;
-      await panel.save();
-      return interaction.reply({
-        content: selectedRoleId
-        ? `✅ Ping role set to <@&${selectedRoleId}>.`
-        : '✅ Ping role cleared (no role will be pinged).',
-        ephemeral: true });
       }
     }
 
