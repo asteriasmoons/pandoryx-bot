@@ -12,7 +12,7 @@ const { sendTicketPanelEditor } = require('../events/ticketPanelUi');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ticketpanel')
-    .setDescription('Create, edit, list, post, or delete ticket panels')
+    .setDescription('Create, edit, list, post, delete, or set ping role for ticket panels')
     .addSubcommand(sub =>
       sub.setName('create')
         .setDescription('Create a new ticket panel')
@@ -52,6 +52,20 @@ module.exports = {
             .setDescription('Name of the panel to post')
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('setrole')
+        .setDescription('Set a role to be pinged when a ticket is created')
+        .addStringOption(opt =>
+          opt.setName('name')
+            .setDescription('Name of the panel to set the role for')
+            .setRequired(true)
+        )
+        .addRoleOption(opt =>
+          opt.setName('role')
+            .setDescription('The role to ping when a ticket is opened')
+            .setRequired(true)
+        )
     ),
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
@@ -63,7 +77,7 @@ module.exports = {
     if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
       return interaction.reply({
         content: 'You need **Manage Server** permission to use this command.',
-        ephemeral: false
+        ephemeral: true
       });
     }
 
@@ -73,7 +87,7 @@ module.exports = {
       if (existing) {
         return interaction.reply({
           content: `A panel named \`${name}\` already exists.`,
-          ephemeral: false
+          ephemeral: true
         });
       }
 
@@ -84,6 +98,7 @@ module.exports = {
         transcriptsEnabled: true,
         emoji: '',
         greeting: 'Thank you for opening a ticket! A moderator will be with you shortly.',
+        roleToPing: '', // <--- new field
         embed: {
           title: '',
           description: '',
@@ -104,7 +119,7 @@ module.exports = {
       if (!panel) {
         return interaction.reply({
           content: `No panel named \`${name}\` was found.`,
-          ephemeral: false
+          ephemeral: true
         });
       }
       return sendTicketPanelEditor(interaction, panel);
@@ -116,13 +131,13 @@ module.exports = {
       if (!deleted) {
         return interaction.reply({
           content: `No panel named \`${name}\` was found.`,
-          ephemeral: false
+          ephemeral: true
         });
       }
 
       return interaction.reply({
         content: `Panel \`${name}\` deleted.`,
-        ephemeral: false
+        ephemeral: true
       });
     }
 
@@ -132,7 +147,7 @@ module.exports = {
       if (!panels.length) {
         return interaction.reply({
           content: 'No ticket panels found for this server.',
-          ephemeral: false
+          ephemeral: true
         });
       }
 
@@ -140,7 +155,7 @@ module.exports = {
 
       return interaction.reply({
         content: `**Ticket Panels:**\n${panelList}`,
-        ephemeral: false
+        ephemeral: true
       });
     }
 
@@ -150,7 +165,7 @@ module.exports = {
       if (!panel) {
         return interaction.reply({
           content: `No panel named \`${name}\` was found.`,
-          ephemeral: false
+          ephemeral: true
         });
       }
 
@@ -158,7 +173,7 @@ module.exports = {
       if (!channel || !channel.isTextBased()) {
         return interaction.reply({
           content: 'This panel has no valid post channel set. Use the select menu to assign one.',
-          ephemeral: false
+          ephemeral: true
         });
       }
 
@@ -197,7 +212,26 @@ module.exports = {
 
       return interaction.reply({
         content: `Ticket panel \`${name}\` has been posted to <#${channel.id}>.`,
-        ephemeral: false
+        ephemeral: true
+      });
+    }
+
+    // --- SET ROLE TO PING ---
+    if (sub === 'setrole') {
+      const role = interaction.options.getRole('role');
+      const panel = await TicketPanel.findOne({ guildId, panelName: name });
+      if (!panel) {
+        return interaction.reply({
+          content: `No panel named \`${name}\` was found.`,
+          ephemeral: true
+        });
+      }
+      panel.roleToPing = role.id;
+      await panel.save();
+
+      return interaction.reply({
+        content: `Role <@&${role.id}> will now be pinged for tickets created with panel \`${name}\`.`,
+        ephemeral: true
       });
     }
   }

@@ -899,12 +899,19 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
     const deleteBtn = new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete').setStyle(ButtonStyle.Secondary);
     const row = new ActionRowBuilder().addComponents(claimBtn, closeBtn, deleteBtn);
 
-    // SEND the message in the ticket channel
-    await ticketChannel.send({
-      content: `<@${interaction.user.id}>`,
-      embeds: [greetingEmbed],
-      components: [row]
-    });
+
+    // Find the panel used to create the ticket
+// (assuming you have 'panel' loaded)
+let mention = `<@${interaction.user.id}>`;
+if (panel.roleToPing) {
+  mention += ` <@&${panel.roleToPing}>`;
+}
+
+await ticketChannel.send({
+  content: mention,
+  embeds: [greetingEmbed],
+  components: [row]
+});
 
     // REPLY to the modal submission (DO THIS ONLY ONCE)
     await interaction.reply({

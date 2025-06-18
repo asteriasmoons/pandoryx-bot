@@ -8,6 +8,8 @@ const TicketPanelSchema = new mongoose.Schema({
   emoji: { type: String, default: '' },
   greeting: { type: String, default: 'Thank you for opening a ticket! A moderator will be with you shortly.' },
 
+  roleToPing: { type: String, default: '' },
+
   postChannelId: { type: String, default: '' },
   ticketCategoryId: { type: String, default: '' },
 
