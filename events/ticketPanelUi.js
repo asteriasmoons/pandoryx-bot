@@ -5,6 +5,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ChannelSelectMenuBuilder,
+  RoleSelectMenuBuilder,
   ChannelType
 } = require('discord.js');
 
