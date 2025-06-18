@@ -545,7 +545,7 @@ module.exports = {
         if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
 
         await interaction.reply({
-          content: 'Please send the emoji you want to use (standard or custom). You have 30 seconds.',
+          content: 'Please send the emoji you want to use (standard or custom). You have 3 minutes.',
         });
 
         const filter = m => m.author.id === interaction.user.id;
@@ -674,7 +674,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_basic:')) {
   panel.greetingEmbed.description = emptyToNull(interaction.fields.getTextInputValue('description'));
   panel.greetingEmbed.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#5103aa';
   await panel.save();
-  return interaction.reply({ content: 'Greeting embed (basic info) updated.' });
+  return interaction.reply({ content: 'Greeting embed (basic info) updated.', ephemeral: true });
 }
 
 // --- Greeting Embed: Save Author ---
@@ -688,7 +688,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_author:')) {
   panel.greetingEmbed.author.name = emptyToNull(interaction.fields.getTextInputValue('author_name'));
   panel.greetingEmbed.author.icon_url = emptyToNull(interaction.fields.getTextInputValue('author_icon'));
   await panel.save();
-  return interaction.reply({ content: 'Greeting embed (author) updated.' });
+  return interaction.reply({ content: 'Greeting embed (author) updated.', ephemeral: true });
 }
 
 // --- Greeting Embed: Save Footer ---
@@ -704,7 +704,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_footer:')) {
   const timestampInput = interaction.fields.getTextInputValue('footer_timestamp').toLowerCase();
   panel.greetingEmbed.footer.timestamp = timestampInput === 'yes' || timestampInput === 'true';
   await panel.save();
-  return interaction.reply({ content: 'Greeting embed (footer) updated.' });
+  return interaction.reply({ content: 'Greeting embed (footer) updated.', ephemeral: true });
 }
 
 // --- Greeting Embed: Save Images ---
@@ -717,7 +717,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
   panel.greetingEmbed.thumbnail = emptyToNull(interaction.fields.getTextInputValue('thumbnail'));
   panel.greetingEmbed.image = emptyToNull(interaction.fields.getTextInputValue('image'));
   await panel.save();
-  return interaction.reply({ content: 'Greeting embed (images) updated.' });
+  return interaction.reply({ content: 'Greeting embed (images) updated.', ephemeral: true });
 }
 
             // === TICKET PANEL EMBED MODALS (continued) ===
@@ -732,7 +732,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         panel.embed.description = emptyToNull(interaction.fields.getTextInputValue('description'));
         panel.embed.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#7d04c3';
         await panel.save();
-        return interaction.reply({ content: 'Ticket panel embed (basic info) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (basic info) updated.', ephemeral: true });
       }
 
       // Author
@@ -745,7 +745,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         panel.embed.author.name = emptyToNull(interaction.fields.getTextInputValue('author_name'));
         panel.embed.author.icon_url = emptyToNull(interaction.fields.getTextInputValue('author_icon'));
         await panel.save();
-        return interaction.reply({ content: 'Ticket panel embed (author) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (author) updated.', ephemeral: true });
       }
 
       // Footer
@@ -760,7 +760,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         const timestampInput = interaction.fields.getTextInputValue('footer_timestamp').toLowerCase();
         panel.embed.footer.timestamp = timestampInput === 'yes' || timestampInput === 'true';
         await panel.save();
-        return interaction.reply({ content: 'Ticket panel embed (footer) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (footer) updated.', ephemeral: true });
       }
 
       // Images
@@ -772,7 +772,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         panel.embed.thumbnail = emptyToNull(interaction.fields.getTextInputValue('thumbnail'));
         panel.embed.image = emptyToNull(interaction.fields.getTextInputValue('image'));
         await panel.save();
-        return interaction.reply({ content: 'Ticket panel embed (images) updated.' });
+        return interaction.reply({ content: 'Ticket panel embed (images) updated.', ephemeral: true });
       }
 
       // Greeting (already above but for clarity)
@@ -782,7 +782,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: false });
         panel.greetingEmbed = interaction.fields.getTextInputValue('greeting_text');
         await panel.save();
-        return interaction.reply({ content: 'Greeting message updated.' });
+        return interaction.reply({ content: 'Greeting message updated.', ephemeral: true });
       }
 
       // Panel name modal
@@ -795,7 +795,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         if (exists) return interaction.reply({ content: `Panel name \`${newName}\` is already in use.`, ephemeral: false });
         panel.panelName = newName;
         await panel.save();
-        return interaction.reply({ content: `Panel name updated to \`${newName}\`.` });
+        return interaction.reply({ content: `Panel name updated to \`${newName}\`.`, ephemeral: true });
       }
     }
 
@@ -901,7 +901,7 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
 
     // SEND the message in the ticket channel
     await ticketChannel.send({
-      content: `<@${interaction.user.id}>`,
+      content: panel.pingRoleId ? `<@&${panel.pingRoleId}>` : `<@${interaction.user.id}>`,
       embeds: [greetingEmbed],
       components: [row]
     });
@@ -1103,6 +1103,20 @@ if (interaction.customId === 'ticket_delete_cancel') {
         panel.ticketCategoryId = selectedCategoryId;
         await panel.save();
         return interaction.reply({ content: `✅ Ticket category set to <#${selectedCategoryId}>.`, ephemeral: false });
+      }
+      // New role select menu
+      if (interaction.customId.startsWith('ticketpanel_select_ping_role:')) {
+      const panelId = interaction.customId.split(':')[1];
+      const panel = await TicketPanel.findById(panelId);
+      if (!panel) return interaction.reply({ content: 'Panel not found.', ephemeral: true });
+      const selectedRoleId = interaction.values[0] || '';
+      panel.pingRoleId = selectedRoleId;
+      await panel.save();
+      return interaction.reply({
+        content: selectedRoleId
+        ? `✅ Ping role set to <@&${selectedRoleId}>.`
+        : '✅ Ping role cleared (no role will be pinged).',
+        ephemeral: true });
       }
     }
 
