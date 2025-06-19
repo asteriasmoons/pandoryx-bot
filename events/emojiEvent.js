@@ -4,6 +4,7 @@ const LogConfig = require('../models/LogConfig'); // adjust path if needed
 module.exports = (client) => {
   // Emoji created
   client.on(Events.GuildEmojiCreate, async (emoji) => {
+	console.log("[DEBUG] GuildEmojiUpdate fired:", oldEmoji.name, "=>", newEmoji.name);
     const config = await LogConfig.findOne({ guildId: emoji.guild.id });
     if (!config?.logs?.emojiUpdate) return;
     const logChannel = emoji.guild.channels.cache.get(config.logs.emojiUpdate);
