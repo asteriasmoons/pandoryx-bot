@@ -68,6 +68,7 @@ if (fs.existsSync(eventsPath)) {
 
 // Manually load grouped event listener files (not standard event structure)
 require('./events/messageEvent.js')(client);
+require('./events/memberEvents.js')(client);
 
 // Example debug event
 client.on('messageReactionAdd', (reaction, user) => {
