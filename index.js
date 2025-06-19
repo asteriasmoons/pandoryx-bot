@@ -66,10 +66,14 @@ if (fs.existsSync(eventsPath)) {
     }
 }
 
+// Manually load grouped event listener files (not standard event structure)
+require('./events/messageEvent.js')(client);
+
 // Example debug event
 client.on('messageReactionAdd', (reaction, user) => {
     console.log('RAW messageReactionAdd event fired!', reaction.emoji.name, user.tag);
 });
+
 
 client.once('ready', async () => { 
     // Load all reaction role messages into cache

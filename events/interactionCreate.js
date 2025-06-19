@@ -15,6 +15,7 @@ const TicketPanel = require('../models/TicketPanel');
 const TicketInstance = require('../models/TicketInstance');
 const { buildEmbed } = require('../utils/embedEditorUI');
 const { sendGreetingEmbedEditor } = require('../events/ticketPanelUi');
+const LogConfig = require('../models/LogConfig');
 
 async function generateTranscript(channel) {
   let messages = [];
@@ -1144,6 +1145,54 @@ if (interaction.customId === 'ticket_delete_cancel') {
         return interaction.reply({ content: `✅ Ticket category set to <#${selectedCategoryId}>.`, ephemeral: false });
       }
     }
+
+    // === STRING SELECT MENUS ===
+    client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  if (interaction.customId === 'selectLogEvent') {
+    const selectedEvent = interaction.values[0];
+
+    const channelOptions = interaction.guild.channels.cache
+      .filter(c => c.isTextBased() && c.viewable)
+      .map(c => ({
+        label: `#${c.name}`,
+        value: c.id
+      }))
+      .slice(0, 25); // Discord limit
+
+    const channelSelect = new StringSelectMenuBuilder()
+      .setCustomId(`selectLogChannel_${selectedEvent}`)
+      .setPlaceholder('Choose a log channel')
+      .addOptions(channelOptions);
+
+    const row = new ActionRowBuilder().addComponents(channelSelect);
+
+    await interaction.update({
+      content: `Now select the channel for \`${selectedEvent}\`:`,
+      components: [row]
+    });
+  }
+
+  // Channel selection
+  else if (interaction.customId.startsWith('selectLogChannel_')) {
+    const eventType = interaction.customId.split('_')[1];
+    const selectedChannelId = interaction.values[0];
+
+    let config = await LogConfig.findOne({ guildId: interaction.guild.id });
+    if (!config) {
+      config = new LogConfig({ guildId: interaction.guild.id });
+    }
+
+    config.logs[eventType] = selectedChannelId;
+    await config.save();
+
+    await interaction.update({
+      content: `✅ Logging for **${eventType}** will now go to <#${selectedChannelId}>.`,
+      components: []
+    });
+  }
+});
 
     // === SLASH COMMAND HANDLER ===
     if (interaction.isChatInputCommand()) {
