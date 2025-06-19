@@ -26,13 +26,16 @@ const TicketInstanceSchema = new mongoose.Schema({
   staff: [{ type: String }],
 
   // (Optional) Reason or summary of closure
-  closeReason: { type: String },
+  closeReason: { type: String, default: '' },
 
   // (Optional) Modal responses or ticket content
   content: { type: Object },
 
   // (Optional) User ID of the staff member who claimed this ticket
   claimedBy: { type: String, default: null },
+
+  // (Optional) User ID of the person who closed the ticket (user or staff)
+  closedBy: { type: String, default: '' }
 });
 
 module.exports = mongoose.model('TicketInstance', TicketInstanceSchema);

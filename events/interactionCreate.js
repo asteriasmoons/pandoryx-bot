@@ -1000,15 +1000,55 @@ if (interaction.customId === 'ticket_close') {
       ephemeral: true
     });
   }
-  await interaction.reply({
+  // Confirm close
+  return interaction.reply({
     embeds: [new EmbedBuilder()
-      .setColor(0x9e10a0)
-      .setDescription('This ticket will be closed in 5 seconds.')],
-    ephemeral: false
+      .setColor(0xffcc00)
+      .setDescription('Are you sure you want to close this ticket?')],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('ticket_close_confirm')
+          .setLabel('Yes, Close')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('ticket_close_cancel')
+          .setLabel('Cancel')
+          .setStyle(ButtonStyle.Secondary)
+      )
+    ],
+    ephemeral: true
   });
-  setTimeout(async () => {
-    await interaction.channel.delete().catch(() => {});
-  }, 5000);
+}
+
+// --- CANCEL CLOSE ---
+if (interaction.customId === 'ticket_close_cancel') {
+  return interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0xcefbdc)
+        .setDescription('Ticket close cancelled.')
+    ],
+    components: []
+  });
+}
+
+// --- CONFIRM CLOSE: SHOW REASON MODAL ---
+if (interaction.customId === 'ticket_close_confirm') {
+  // Show modal to enter close reason
+  const modal = new ModalBuilder()
+    .setCustomId('ticket_close_reason_modal')
+    .setTitle('Close Ticket Reason')
+    .addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('close_reason')
+          .setLabel('Reason for closing the ticket')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(false)
+      )
+    );
+  return interaction.showModal(modal);
 }
 
 // --- DELETE BUTTON ---
@@ -1069,38 +1109,6 @@ if (interaction.customId === 'ticket_delete_confirm') {
     });
   }
 
-  // === TRANSCRIPT LOGIC ===
-  // Load the panel for transcript settings:
-  const panel = await TicketPanel.findOne({
-    guildId: interaction.guild.id,
-    panelName: ticket.panelName
-  });
-  if (panel && panel.transcriptsEnabled) {
-    const transcriptBuffer = await generateTranscript(interaction.channel);
-
-    // 1. Send to the ticket opener (DM)
-    try {
-      const opener = await interaction.client.users.fetch(ticket.userId);
-      await opener.send({
-        content: `Here is the transcript for your closed ticket in **${interaction.guild.name}**:`,
-        files: [{ attachment: transcriptBuffer, name: `transcript-${interaction.channel.id}.txt` }]
-      });
-    } catch (e) {
-      // Ignore if DMs are closed
-    }
-
-    // 2. Send to the configured staff log channel
-    if (panel.transcriptChannelId) {
-      const staffChannel = interaction.guild.channels.cache.get(panel.transcriptChannelId);
-      if (staffChannel && staffChannel.isTextBased()) {
-        await staffChannel.send({
-          content: `Transcript for deleted ticket #${interaction.channel.name}:`,
-          files: [{ attachment: transcriptBuffer, name: `transcript-${interaction.channel.id}.txt` }]
-        });
-      }
-    }
-  }
-
   // === Channel delete and DB update ===
   await interaction.channel.delete('Ticket deleted by user or mod');
   if (ticket) {
@@ -1122,6 +1130,84 @@ if (interaction.customId === 'ticket_delete_cancel') {
     ],
     components: [] // remove buttons
   });
+}
+
+// === TRANSCRIPT STUFF ===
+if (interaction.isModalSubmit() && interaction.customId === 'ticket_close_reason_modal') {
+  const channel = interaction.channel;
+  const ticket = await TicketInstance.findOne({ channelId: channel.id });
+  if (!ticket) {
+    return interaction.reply({
+      content: 'Ticket not found in database.',
+      ephemeral: true
+    });
+  }
+  // Update ticket DB fields
+  ticket.closedAt = new Date();
+  ticket.status = 'closed';
+  ticket.closedBy = interaction.user.id; // <— Add this field to your schema if not present
+  ticket.closeReason = interaction.fields.getTextInputValue('close_reason') || 'No reason provided.';
+  await ticket.save();
+
+  // Load panel for transcript settings
+  const panel = await TicketPanel.findOne({ guildId: interaction.guild.id, panelName: ticket.panelName });
+
+  // Generate transcript
+  let transcriptBuffer = null;
+  if (panel && panel.transcriptsEnabled) {
+    transcriptBuffer = await generateTranscript(channel);
+  }
+
+  // Ticket details embed
+  const embed = new EmbedBuilder()
+    .setTitle('Ticket Closed')
+    .addFields(
+      { name: 'Ticket Author', value: `<@${ticket.userId}>`, inline: true },
+      { name: 'Claimed By', value: ticket.claimedBy ? `<@${ticket.claimedBy}>` : 'Unclaimed', inline: true },
+      { name: 'Closed By', value: `<@${interaction.user.id}>`, inline: true },
+      { name: 'Opened', value: `<t:${Math.floor(new Date(ticket.createdAt).getTime()/1000)}:F>`, inline: true },
+      { name: 'Closed', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true },
+      { name: 'Close Reason', value: ticket.closeReason || 'No reason provided.' }
+    )
+    .setColor(0x9e10a0);
+
+  // DM transcript + embed to user
+  if (transcriptBuffer) {
+    try {
+      const user = await interaction.client.users.fetch(ticket.userId);
+      await user.send({
+        content: `Here is the transcript and details for your closed ticket in **${interaction.guild.name}**:`,
+        embeds: [embed],
+        files: [{ attachment: transcriptBuffer, name: `transcript-${channel.id}.txt` }]
+      });
+    } catch (e) { /* ignore if DMs closed */ }
+  }
+
+  // Log transcript + embed in staff channel if set
+  if (panel && panel.transcriptChannelId) {
+    const staffChannel = interaction.guild.channels.cache.get(panel.transcriptChannelId);
+    if (staffChannel && staffChannel.isTextBased()) {
+      await staffChannel.send({
+        content: `Transcript for closed ticket #${channel.name}:`,
+        embeds: [embed],
+        files: transcriptBuffer ? [{ attachment: transcriptBuffer, name: `transcript-${channel.id}.txt` }] : []
+      });
+    }
+  }
+
+  // Confirm for staff/user in channel before delete
+  await interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0x9e10a0)
+        .setDescription('This ticket will be closed in 5 seconds.')
+    ],
+    ephemeral: false
+  });
+
+  setTimeout(async () => {
+    await channel.delete().catch(() => {});
+  }, 5000);
 }
 
     // === SELECT MENU HANDLERS ===
