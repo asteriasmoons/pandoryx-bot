@@ -4,7 +4,6 @@ const LogConfig = require('../models/LogConfig'); // adjust path if needed
 module.exports = (client) => {
   // Emoji created
   client.on(Events.GuildEmojiCreate, async (emoji) => {
-	console.log("[DEBUG] GuildEmojiUpdate fired:", oldEmoji.name, "=>", newEmoji.name);
     const config = await LogConfig.findOne({ guildId: emoji.guild.id });
     if (!config?.logs?.emojiUpdate) return;
     const logChannel = emoji.guild.channels.cache.get(config.logs.emojiUpdate);
@@ -40,10 +39,16 @@ module.exports = (client) => {
 
   // Emoji updated (name or image)
   client.on(Events.GuildEmojiUpdate, async (oldEmoji, newEmoji) => {
+    // Debug logging - REMOVE or COMMENT OUT if not needed
+    // console.log("[DEBUG] GuildEmojiUpdate fired:", oldEmoji.name, "=>", newEmoji.name);
+
     const config = await LogConfig.findOne({ guildId: newEmoji.guild.id });
     if (!config?.logs?.emojiUpdate) return;
     const logChannel = newEmoji.guild.channels.cache.get(config.logs.emojiUpdate);
     if (!logChannel) return;
+
+    // Only log if there was an actual change (name or image)
+    if (oldEmoji.name === newEmoji.name && oldEmoji.url === newEmoji.url) return;
 
     const embed = new EmbedBuilder()
       .setColor(0xffe66d)
@@ -104,6 +109,13 @@ module.exports = (client) => {
     if (!config?.logs?.emojiUpdate) return;
     const logChannel = newSticker.guild.channels.cache.get(config.logs.emojiUpdate);
     if (!logChannel) return;
+
+    // Only log if name/image/format changed
+    if (
+      oldSticker.name === newSticker.name &&
+      oldSticker.url === newSticker.url &&
+      oldSticker.format === newSticker.format
+    ) return;
 
     const embed = new EmbedBuilder()
       .setColor(0xffe66d)
