@@ -1179,10 +1179,12 @@ if (interaction.customId === 'ticket_delete_cancel') {
   { upsert: true }
 );
 
-    return interaction.update({
-      content: `✅ Logging for **${eventType}** set to <#${channelId}>.`,
-      components: []
-    });
+await interaction.deferUpdate();
+
+await interaction.editReply({
+  content: `Now choose the channel to log **${selectedEvent}** events:`,
+  components: [row]
+});
   }
 });
 
