@@ -8,6 +8,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   PermissionFlagsBits,
+  StringSelectMenuBuilder,
   ChannelType
 } = require('discord.js');
 const EmbedModel = require('../models/Embed');
