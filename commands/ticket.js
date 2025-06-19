@@ -66,7 +66,21 @@ module.exports = {
             .setDescription('The role to ping when a ticket is opened')
             .setRequired(true)
         )
-    ),
+    )
+    .addSubcommand(sub =>
+  sub.setName('settranscriptchannel')
+    .setDescription('Set the channel to receive transcripts for a ticket panel')
+    .addStringOption(opt =>
+      opt.setName('name')
+        .setDescription('Name of the ticket panel')
+        .setRequired(true)
+    )
+    .addChannelOption(opt =>
+      opt.setName('channel')
+        .setDescription('Channel to send transcripts to')
+        .setRequired(true)
+    )
+),
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
@@ -234,5 +248,28 @@ module.exports = {
         ephemeral: true
       });
     }
+    // --- SET TRANSCRIPT CHANNEL ---
+if (sub === 'settranscriptchannel') {
+  const panel = await TicketPanel.findOne({ guildId, panelName: name });
+  if (!panel) {
+    return interaction.reply({
+      content: `No panel named \`${name}\` was found.`,
+      ephemeral: true
+    });
+  }
+  const channel = interaction.options.getChannel('channel');
+  if (!channel || !channel.isTextBased()) {
+    return interaction.reply({
+      content: `The selected channel is not a text channel.`,
+      ephemeral: true
+    });
+  }
+  panel.transcriptChannelId = channel.id;
+  await panel.save();
+  return interaction.reply({
+    content: `Transcript channel for panel \`${name}\` set to <#${channel.id}>.`,
+    ephemeral: true
+    });
+   }
   }
 };

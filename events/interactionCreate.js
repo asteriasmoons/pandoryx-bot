@@ -1066,15 +1066,47 @@ if (interaction.customId === 'ticket_delete_confirm') {
     });
   }
 
+  // === TRANSCRIPT LOGIC ===
+  // Load the panel for transcript settings:
+  const panel = await TicketPanel.findOne({
+    guildId: interaction.guild.id,
+    panelName: ticket.panelName
+  });
+  if (panel && panel.transcriptsEnabled) {
+    const transcriptBuffer = await generateTranscript(interaction.channel);
+
+    // 1. Send to the ticket opener (DM)
+    try {
+      const opener = await interaction.client.users.fetch(ticket.userId);
+      await opener.send({
+        content: `Here is the transcript for your closed ticket in **${interaction.guild.name}**:`,
+        files: [{ attachment: transcriptBuffer, name: `transcript-${interaction.channel.id}.txt` }]
+      });
+    } catch (e) {
+      // Ignore if DMs are closed
+    }
+
+    // 2. Send to the configured staff log channel
+    if (panel.transcriptChannelId) {
+      const staffChannel = interaction.guild.channels.cache.get(panel.transcriptChannelId);
+      if (staffChannel && staffChannel.isTextBased()) {
+        await staffChannel.send({
+          content: `Transcript for deleted ticket #${interaction.channel.name}:`,
+          files: [{ attachment: transcriptBuffer, name: `transcript-${interaction.channel.id}.txt` }]
+        });
+      }
+    }
+  }
+
+  // === Channel delete and DB update ===
   await interaction.channel.delete('Ticket deleted by user or mod');
-  // Optionally, update the ticket in DB
   if (ticket) {
     ticket.status = 'closed';
     ticket.closedAt = new Date();
     ticket.closeReason = 'Deleted by user or moderator';
     await ticket.save();
   }
-  // No need to reply: channel is gone!
+  // No need to reply, channel is gone!
 }
 
 // --- CANCEL DELETION ---

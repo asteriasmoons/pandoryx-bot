@@ -15,6 +15,7 @@ const TicketPanelSchema = new mongoose.Schema({
 
 
   transcriptsEnabled: { type: Boolean, default: true },
+  transcriptChannelId: { type: String, default: '' }, // <-- for log channel
 
   embed: {
     title: { type: String, default: '' },
