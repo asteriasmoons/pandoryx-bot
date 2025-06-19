@@ -1173,11 +1173,11 @@ if (interaction.customId === 'ticket_delete_cancel') {
     const eventType = interaction.customId.replace('selectLogChannel_', '');
     const channelId = interaction.values[0];
 
-    let config = await LogConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) config = new LogConfig({ guildId: interaction.guild.id });
-
-    config.logs[eventType] = channelId;
-    await config.save();
+    await LogConfig.findOneAndUpdate(
+  { guildId: interaction.guild.id },
+  { $set: { [`logs.${eventType}`]: channelId } },
+  { upsert: true }
+);
 
     return interaction.update({
       content: `✅ Logging for **${eventType}** set to <#${channelId}>.`,
