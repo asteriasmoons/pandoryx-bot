@@ -1,23 +1,17 @@
-// /commands/log.js
 const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('log')
-    .setDescription('Configure log settings')
+    .setDescription('Configure logging')
     .addSubcommand(sub =>
-      sub.setName('config')
-         .setDescription('Configure what channel to log specific events to.')
+      sub.setName('config').setDescription('Configure event log destinations.')
     ),
 
   async execute(interaction) {
-    if (!interaction.member.permissions.has('Administrator')) {
-      return interaction.reply({ content: 'You need to be an administrator to use this command.', ephemeral: true });
-    }
-
     const eventSelect = new StringSelectMenuBuilder()
       .setCustomId('selectLogEvent')
-      .setPlaceholder('Choose an event to configure')
+      .setPlaceholder('Select an event to configure')
       .addOptions([
         { label: 'Member Join', value: 'memberJoin' },
         { label: 'Member Leave', value: 'memberLeave' },
@@ -33,13 +27,13 @@ module.exports = {
         { label: 'Warn', value: 'warn' },
         { label: 'Timeout', value: 'timeout' },
         { label: 'Ban', value: 'ban' },
-        { label: 'Kick', value: 'kick' },
+        { label: 'Kick', value: 'kick' }
       ]);
 
     const row = new ActionRowBuilder().addComponents(eventSelect);
 
     await interaction.reply({
-      content: 'Select the event you want to configure:',
+      content: '🛠️ Select an event you want to assign a log channel for:',
       components: [row],
       ephemeral: true
     });

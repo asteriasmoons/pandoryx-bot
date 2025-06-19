@@ -1148,51 +1148,39 @@ if (interaction.customId === 'ticket_delete_cancel') {
       }
     }
 
-    // === STRING SELECT MENUS ===
     client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  if (interaction.customId === 'selectLogEvent') {
+  // STEP 1: User picks log event type
+  if (interaction.isStringSelectMenu() && interaction.customId === 'selectLogEvent') {
     const selectedEvent = interaction.values[0];
 
-    const channelOptions = interaction.guild.channels.cache
-      .filter(c => c.isTextBased() && c.viewable)
-      .map(c => ({
-        label: `#${c.name}`,
-        value: c.id
-      }))
-      .slice(0, 25); // Discord limit
-
-      const channelSelect = new ChannelSelectMenuBuilder()
+    const channelSelect = new ChannelSelectMenuBuilder()
       .setCustomId(`selectLogChannel_${selectedEvent}`)
       .setPlaceholder('Select a channel')
       .setMinValues(1)
       .setMaxValues(1)
-      .addChannelTypes(ChannelType.GuildText); // optional: limit to text channels only
+      .addChannelTypes(ChannelType.GuildText); // Only show text channels
 
     const row = new ActionRowBuilder().addComponents(channelSelect);
 
-    await interaction.update({
-      content: `Now select the channel for \`${selectedEvent}\`:`,
+    return interaction.update({
+      content: `Now choose the channel to log **${selectedEvent}** events:`,
       components: [row]
     });
   }
 
-  // Channel selection
-  else if (interaction.customId.startsWith('selectLogChannel_')) {
-    const eventType = interaction.customId.split('_')[1];
-    const selectedChannelId = interaction.values[0];
+  // STEP 2: User picks channel
+  if (interaction.isChannelSelectMenu() && interaction.customId.startsWith('selectLogChannel_')) {
+    const eventType = interaction.customId.replace('selectLogChannel_', '');
+    const channelId = interaction.values[0];
 
     let config = await LogConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) {
-      config = new LogConfig({ guildId: interaction.guild.id });
-    }
+    if (!config) config = new LogConfig({ guildId: interaction.guild.id });
 
-    config.logs[eventType] = selectedChannelId;
+    config.logs[eventType] = channelId;
     await config.save();
 
-    await interaction.update({
-      content: `✅ Logging for **${eventType}** will now go to <#${selectedChannelId}>.`,
+    return interaction.update({
+      content: `✅ Logging for **${eventType}** set to <#${channelId}>.`,
       components: []
     });
   }
