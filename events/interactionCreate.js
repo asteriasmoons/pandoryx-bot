@@ -1148,49 +1148,53 @@ if (interaction.customId === 'ticket_delete_cancel') {
       }
     }
 
-    client.on('interactionCreate', async (interaction) => {
+     // STEP 1: User picks log event type
+  if (interaction.isStringSelectMenu() && interaction.customId === 'selectLogEvent') {
+    await interaction.deferUpdate(); // keeps interaction alive
 
-      // STEP 1: User picks log event type
-if (interaction.isStringSelectMenu() && interaction.customId === 'selectLogEvent') {
-  await interaction.deferUpdate(); // keeps interaction alive
+    const selectedEvent = interaction.values[0];
+    const channelSelect = new ChannelSelectMenuBuilder()
+      .setCustomId(`selectLogChannel_${selectedEvent}`)
+      .setPlaceholder('Select a channel')
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addChannelTypes(ChannelType.GuildText); // Only show text channels
+    const row = new ActionRowBuilder().addComponents(channelSelect);
 
-  const selectedEvent = interaction.values[0];
-
-  const channelSelect = new ChannelSelectMenuBuilder()
-    .setCustomId(`selectLogChannel_${selectedEvent}`)
-    .setPlaceholder('Select a channel')
-    .setMinValues(1)
-    .setMaxValues(1)
-    .addChannelTypes(ChannelType.GuildText); // Only show text channels
-
-  const row = new ActionRowBuilder().addComponents(channelSelect);
-
-  await interaction.editReply({
-    content: `Now choose the channel to log **${selectedEvent}** events:`,
-    components: [row]
-  });
-}
-
-// STEP 2: User picks channel
-if (interaction.isChannelSelectMenu() && interaction.customId.startsWith('selectLogChannel_')) {
-  await interaction.deferUpdate(); // defer this one too for safety
-
-  const eventType = interaction.customId.replace('selectLogChannel_', '');
-  const channelId = interaction.values[0];
-
-  await LogConfig.findOneAndUpdate(
-    { guildId: interaction.guild.id },
-    { $set: { [`logs.${eventType}`]: channelId } },
-    { upsert: true }
-  );
-
-  await interaction.editReply({
-    content: `✅ Logging for **${eventType}** set to <#${channelId}>.`,
-    components: []
-  });
-}
+    await interaction.editReply({
+      content: `Now choose the channel to log **${selectedEvent}** events:`,
+      components: [row]
     });
+  }
 
+  // STEP 2: User picks channel
+  if (interaction.isChannelSelectMenu() && interaction.customId.startsWith('selectLogChannel_')) {
+    await interaction.deferUpdate();
+
+    const eventType = interaction.customId.replace('selectLogChannel_', '');
+    const channelId = interaction.values[0];
+
+    const config = await LogConfig.findOne({ guildId: interaction.guild.id });
+    const currentChannelId = config?.logs?.[eventType];
+
+    if (currentChannelId === channelId) {
+      return await interaction.editReply({
+        content: `⚠️ Logging for **${eventType}** is already set to <#${channelId}>.`,
+        components: []
+      });
+    }
+
+    await LogConfig.findOneAndUpdate(
+      { guildId: interaction.guild.id },
+      { $set: { [`logs.${eventType}`]: channelId } },
+      { upsert: true }
+    );
+
+    await interaction.editReply({
+      content: `✅ Logging for **${eventType}** set to <#${channelId}>.`,
+      components: []
+    });
+  }
 
     // === SLASH COMMAND HANDLER ===
     if (interaction.isChatInputCommand()) {
