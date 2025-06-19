@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const UserWarn = require('../models/UserWarn'); // Adjust path if needed
+const UserWarn = require('../models/UserWarn');
+const LogConfig = require('../models/LogConfig'); // <- Add this!
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -73,7 +74,7 @@ module.exports = {
       // Reply to the admin as soon as possible
       await interaction.reply({ embeds: [embed], ephemeral: false });
 
-      // Then try to DM the user (in the background)
+      // Try to DM the user (in the background)
       try {
         await user.send({
           embeds: [
@@ -90,6 +91,24 @@ module.exports = {
         });
       } catch (err) {
         // Optionally log DM failures here
+      }
+
+      // === LOG TO LOG CHANNEL ===
+      const logConfig = await LogConfig.findOne({ guildId });
+      if (logConfig?.logs?.warn) {
+        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.warn);
+        if (logChannel) {
+          const logEmbed = new EmbedBuilder()
+            .setColor(0xff4fa6)
+            .setTitle('⚠️ Member Warned')
+            .addFields(
+              { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
+              { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'Reason', value: reason, inline: false }
+            )
+            .setTimestamp();
+          logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+        }
       }
     }
 
@@ -144,6 +163,25 @@ module.exports = {
         .setTimestamp();
 
       await interaction.reply({ embeds: [embed], ephemeral: false });
+
+      // === LOG REMOVAL TO LOG CHANNEL ===
+      const logConfig = await LogConfig.findOne({ guildId });
+      if (logConfig?.logs?.warn) {
+        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.warn);
+        if (logChannel) {
+          const logEmbed = new EmbedBuilder()
+            .setColor(0xff4fa6)
+            .setTitle('⚠️ Warning Removed')
+            .addFields(
+              { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
+              { name: 'Moderator', value: `<@${removed[0].moderatorId}>`, inline: true },
+              { name: 'Reason', value: removed[0].reason, inline: false },
+              { name: 'Warning #', value: `${number}`, inline: true }
+            )
+            .setTimestamp();
+          logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+        }
+      }
     }
   }
 };

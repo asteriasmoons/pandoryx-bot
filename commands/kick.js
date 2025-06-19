@@ -1,7 +1,7 @@
-// commands/kick.js
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const UserKick = require('../models/UserKick');
 const GuildKickCounter = require('../models/GuildKickCounter');
+const LogConfig = require('../models/LogConfig'); // <-- Add this line
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -124,6 +124,25 @@ module.exports = {
         .setColor(0x00a5b6)
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
+
+      // === MOD ACTION LOGGING ===
+      const logConfig = await LogConfig.findOne({ guildId });
+      if (logConfig?.logs?.kick) {
+        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.kick);
+        if (logChannel) {
+          const logEmbed = new EmbedBuilder()
+            .setColor(0x00a5b6)
+            .setTitle('🥾 User Kicked')
+            .addFields(
+              { name: 'User ID', value: targetId, inline: true },
+              { name: 'Reason', value: reason, inline: true },
+              { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'Case Number', value: `${caseNumber}`, inline: true }
+            )
+            .setTimestamp();
+          logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+        }
+      }
     }
 
     if (sub === 'list') {

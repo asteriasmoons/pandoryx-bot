@@ -1,6 +1,7 @@
 // commands/timeout.js
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const TimeoutCase = require('../models/TimeoutCase');
+const LogConfig = require('../models/LogConfig'); // <-- Add this
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -90,10 +91,31 @@ module.exports = {
             { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
             { name: 'Duration', value: `${minutes} minutes`, inline: true },
             { name: 'Reason', value: reason, inline: false },
-            { name: 'Case #', value: timeoutCase.caseNumber.toString(), inline: true }
+            { name: 'Case #', value: timeoutCase.caseNumber?.toString() ?? 'N/A', inline: true }
           )
           .setTimestamp();
-        return interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
+
+        // === LOG TO LOG CHANNEL ===
+        const logConfig = await LogConfig.findOne({ guildId });
+        if (logConfig?.logs?.timeout) {
+          const logChannel = interaction.guild.channels.cache.get(logConfig.logs.timeout);
+          if (logChannel) {
+            const logEmbed = new EmbedBuilder()
+              .setColor(0xff8102)
+              .setTitle('⏳ Member Timed Out')
+              .addFields(
+                { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
+                { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
+                { name: 'Duration', value: `${minutes} minutes`, inline: true },
+                { name: 'Reason', value: reason, inline: false },
+                { name: 'Case #', value: timeoutCase.caseNumber?.toString() ?? 'N/A', inline: true }
+              )
+              .setTimestamp();
+            logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+          }
+        }
+
       } catch (err) {
         console.error(err);
         return interaction.reply({ embeds: [errorEmbed('Failed to timeout member. Make sure I have the correct permissions and role position.')], ephemeral: false });
@@ -121,7 +143,26 @@ module.exports = {
             { name: 'Reason', value: reason, inline: false }
           )
           .setTimestamp();
-        return interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
+
+        // === LOG TO LOG CHANNEL ===
+        const logConfig = await LogConfig.findOne({ guildId });
+        if (logConfig?.logs?.timeout) {
+          const logChannel = interaction.guild.channels.cache.get(logConfig.logs.timeout);
+          if (logChannel) {
+            const logEmbed = new EmbedBuilder()
+              .setColor(0xff8102)
+              .setTitle('🔓 Timeout Removed')
+              .addFields(
+                { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
+                { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
+                { name: 'Reason', value: reason, inline: false }
+              )
+              .setTimestamp();
+            logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+          }
+        }
+
       } catch (err) {
         console.error(err);
         return interaction.reply({ embeds: [errorEmbed('Failed to remove timeout. Make sure I have the correct permissions and role position.')], ephemeral: true });

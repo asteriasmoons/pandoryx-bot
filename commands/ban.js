@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const UserBan = require('../models/UserBan');
 const GuildCaseCounter = require('../models/GuildCaseCounter');
+const LogConfig = require('../models/LogConfig'); // <-- Add this line
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -124,6 +125,25 @@ module.exports = {
         .setColor(0x8202ff)
         .setTimestamp();
       await interaction.reply({ embeds: [embed], ephemeral: false });
+
+      // === MOD ACTION LOGGING ===
+      const logConfig = await LogConfig.findOne({ guildId });
+      if (logConfig?.logs?.ban) {
+        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.ban);
+        if (logChannel) {
+          const logEmbed = new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle('🔨 User Banned')
+            .addFields(
+              { name: 'User ID', value: targetId, inline: true },
+              { name: 'Reason', value: reason, inline: true },
+              { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'Case Number', value: `${caseNumber}`, inline: true }
+            )
+            .setTimestamp();
+          logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+        }
+      }
     }
 
     if (sub === 'remove') {
@@ -144,10 +164,27 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('User Unbanned')
         .setDescription(`User ID: \`${targetId}\` has been unbanned and their ban cases removed.`)
-        .setColor(0x8202ff)
+        .setColor(0x57f287)
         .setTimestamp();
 
       await interaction.reply({ embeds: [embed], ephemeral: false });
+
+      // === MOD ACTION LOGGING ===
+      const logConfig = await LogConfig.findOne({ guildId });
+      if (logConfig?.logs?.ban) {
+        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.ban);
+        if (logChannel) {
+          const logEmbed = new EmbedBuilder()
+            .setColor(0x57f287)
+            .setTitle('⚡ User Unbanned')
+            .addFields(
+              { name: 'User ID', value: targetId, inline: true },
+              { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true }
+            )
+            .setTimestamp();
+          logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+        }
+      }
     }
 
     if (sub === 'list') {
