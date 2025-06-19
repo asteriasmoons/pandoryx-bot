@@ -70,6 +70,7 @@ if (fs.existsSync(eventsPath)) {
 require('./events/messageEvent.js')(client);
 require('./events/memberEvents.js')(client);
 require('./events/channelEvents.js')(client);
+require('./events/roleEvents.js')(client);
 
 // Example debug event
 client.on('messageReactionAdd', (reaction, user) => {
