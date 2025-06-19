@@ -806,8 +806,10 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
 if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal_submit:')) {
   try {
     const panelName = interaction.customId.split(':')[1];
+    const guildId = interaction.guild.id;
+    const userId = interaction.user.id;
     const panel = await TicketPanel.findOne({
-      guildId: interaction.guild.id,
+      guildId,
       panelName
     });
     if (!panel) {
@@ -818,19 +820,27 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
     }
     const issue = interaction.fields.getTextInputValue('issue');
 
+    // Find the next ticket number for this guild
+    let latestTicket = await TicketInstance.findOne({ guildId })
+      .sort({ ticketNumber: -1 })
+      .select('ticketNumber')
+      .lean();
+    let ticketNumber = latestTicket ? latestTicket.ticketNumber + 1 : 1;
+
+    // Create channel
     const overwrites = [
       {
         id: interaction.guild.roles.everyone,
         deny: ['ViewChannel']
       },
       {
-        id: interaction.user.id,
+        id: userId,
         allow: ['ViewChannel', 'SendMessages']
       }
     ];
 
     const channelOptions = {
-      name: `ticket-${interaction.user.username}`.toLowerCase(),
+      name: `${interaction.user.username.toLowerCase()}-${ticketNumber}`,
       type: ChannelType.GuildText,
       permissionOverwrites: overwrites
     };
@@ -839,9 +849,12 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
     }
     const ticketChannel = await interaction.guild.channels.create(channelOptions);
 
-    await TicketInstance.create({
+    // Store ticket in DB (INCLUDE guildId and ticketNumber!)
+    const newTicket = await TicketInstance.create({
       ticketId: ticketChannel.id,
-      userId: interaction.user.id,
+      guildId,
+      ticketNumber,
+      userId,
       panelName,
       channelId: ticketChannel.id,
       status: 'open',
@@ -890,11 +903,12 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
         .setDescription(panel.greeting || 'Thank you for opening a ticket! A moderator will be with you shortly.');
     }
 
-    // Add issue to embed
-    greetingEmbed.addFields({
-      name: 'Issue',
-      value: issue || 'No description provided'
-    });
+    // Add ticket number, issue, and author to embed
+    greetingEmbed.addFields(
+      { name: 'Ticket Number', value: `#${ticketNumber}`, inline: true },
+      { name: 'Ticket Author', value: `<@${userId}>`, inline: true },
+      { name: 'Issue', value: issue || 'No description provided' }
+    );
 
     // Buttons
     const claimBtn = new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim').setStyle(ButtonStyle.Secondary);
@@ -902,19 +916,17 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal
     const deleteBtn = new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete').setStyle(ButtonStyle.Secondary);
     const row = new ActionRowBuilder().addComponents(claimBtn, closeBtn, deleteBtn);
 
+    // Mention logic
+    let mention = `<@${userId}>`;
+    if (panel.roleToPing) {
+      mention += ` <@&${panel.roleToPing}>`;
+    }
 
-    // Find the panel used to create the ticket
-// (assuming you have 'panel' loaded)
-let mention = `<@${interaction.user.id}>`;
-if (panel.roleToPing) {
-  mention += ` <@&${panel.roleToPing}>`;
-}
-
-await ticketChannel.send({
-  content: mention,
-  embeds: [greetingEmbed],
-  components: [row]
-});
+    await ticketChannel.send({
+      content: mention,
+      embeds: [greetingEmbed],
+      components: [row]
+    });
 
     // REPLY to the modal submission (DO THIS ONLY ONCE)
     await interaction.reply({
@@ -1162,6 +1174,7 @@ if (interaction.isModalSubmit() && interaction.customId === 'ticket_close_reason
   const embed = new EmbedBuilder()
     .setTitle('Ticket Closed')
     .addFields(
+      { name: 'Ticket Number', value: `#${ticket.ticketNumber || 'N/A'}`, inline: true },
       { name: 'Ticket Author', value: `<@${ticket.userId}>`, inline: true },
       { name: 'Claimed By', value: ticket.claimedBy ? `<@${ticket.claimedBy}>` : 'Unclaimed', inline: true },
       { name: 'Closed By', value: `<@${interaction.user.id}>`, inline: true },

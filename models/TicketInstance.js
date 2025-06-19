@@ -4,6 +4,12 @@ const TicketInstanceSchema = new mongoose.Schema({
   // Unique ticket identifier (could be the channel ID, or a generated string)
   ticketId: { type: String, required: true, unique: true },
 
+  // Discord server the ticket belongs to
+  guildId: { type: String, required: true }, // <--- MAKE SURE THIS IS HERE
+
+  // Sequential ticket number (unique per guild)
+  ticketNumber: { type: Number, required: true },
+
   // Discord user who opened the ticket
   userId: { type: String, required: true },
 
@@ -37,5 +43,8 @@ const TicketInstanceSchema = new mongoose.Schema({
   // (Optional) User ID of the person who closed the ticket (user or staff)
   closedBy: { type: String, default: '' }
 });
+
+// Add an index to ensure ticketNumber is unique **per guild**
+TicketInstanceSchema.index({ guildId: 1, ticketNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model('TicketInstance', TicketInstanceSchema);
