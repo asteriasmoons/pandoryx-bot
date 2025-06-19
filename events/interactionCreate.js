@@ -9,6 +9,7 @@ const {
   ButtonStyle,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
+  ChannelSelectMenuBuilder,
   ChannelType
 } = require('discord.js');
 const EmbedModel = require('../models/Embed');
@@ -1162,10 +1163,12 @@ if (interaction.customId === 'ticket_delete_cancel') {
       }))
       .slice(0, 25); // Discord limit
 
-    const channelSelect = new StringSelectMenuBuilder()
+      const channelSelect = new ChannelSelectMenuBuilder()
       .setCustomId(`selectLogChannel_${selectedEvent}`)
-      .setPlaceholder('Choose a log channel')
-      .addOptions(channelOptions);
+      .setPlaceholder('Select a channel')
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addChannelTypes(ChannelType.GuildText); // optional: limit to text channels only
 
     const row = new ActionRowBuilder().addComponents(channelSelect);
 
