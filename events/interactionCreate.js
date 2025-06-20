@@ -18,6 +18,7 @@ const TicketInstance = require('../models/TicketInstance');
 const { buildEmbed } = require('../utils/embedEditorUI');
 const { sendGreetingEmbedEditor } = require('../events/ticketPanelUi');
 const LogConfig = require('../models/LogConfig');
+const RolePanel = require('../models/RolePanel');
 
 async function generateTranscript(channel) {
   let messages = [];
@@ -46,6 +47,28 @@ module.exports = {
 
     // === BUTTON HANDLERS ===
     if (interaction.isButton()) {
+        // --- ROLEPANEL BUTTON HANDLER ---
+  if (interaction.customId.startsWith('rolepanel_button_')) {
+    // customId format: rolepanel_button_<panelId>_<roleId>
+    const [, , panelId, roleId] = interaction.customId.split('_');
+    const member = interaction.member;
+    const panel = await RolePanel.findById(panelId);
+    if (!panel) return interaction.reply({ content: "Role panel not found.", ephemeral: true });
+
+    const role = interaction.guild.roles.cache.get(roleId);
+    if (!role) return interaction.reply({ content: "Role not found.", ephemeral: true });
+
+    const hasRole = member.roles.cache.has(roleId);
+    // Toggle role
+    if (hasRole) {
+      await member.roles.remove(roleId);
+      return interaction.reply({ content: `❌ Removed ${role} role.`, ephemeral: true });
+    } else {
+      await member.roles.add(roleId);
+      return interaction.reply({ content: `✅ Added ${role} role!`, ephemeral: true });
+    }
+  }
+
       // --- TICKETPANEL: Toggle Transcript ---
       if (interaction.customId.startsWith('ticketpanel_toggle_transcript:')) {
         const panelId = interaction.customId.split(':')[1];
@@ -1294,6 +1317,35 @@ if (interaction.isModalSubmit() && interaction.customId === 'ticket_close_reason
       components: []
     });
   }
+
+  // --- ROLEPANEL SELECT MENU HANDLER ---
+if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepanel_select_')) {
+  // customId format: rolepanel_select_<panelId>
+  const [, , panelId] = interaction.customId.split('_');
+  const member = interaction.member;
+  const panel = await RolePanel.findById(panelId);
+  if (!panel) return interaction.reply({ content: "Role panel not found.", ephemeral: true });
+
+  const validRoleIds = panel.roles.map(r => r.roleId);
+  const selectedRoleIds = interaction.values;
+
+  // Remove unselected roles (that the panel manages)
+  const toRemove = member.roles.cache.filter(role =>
+    validRoleIds.includes(role.id) && !selectedRoleIds.includes(role.id)
+  );
+  // Add newly selected roles
+  const toAdd = selectedRoleIds.filter(roleId =>
+    !member.roles.cache.has(roleId)
+  );
+
+  await member.roles.remove(toRemove);
+  await member.roles.add(toAdd);
+
+  return interaction.reply({
+    content: `✅ Your roles have been updated!`,
+    ephemeral: true
+  });
+}
 
     // === SLASH COMMAND HANDLER ===
     if (interaction.isChatInputCommand()) {
