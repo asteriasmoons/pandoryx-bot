@@ -53,42 +53,62 @@ module.exports = (client) => {
 
   // Channel Updated
   client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
-    console.log('[DEBUG] ChannelUpdate event fired!', oldChannel.name, '->', newChannel.name, newChannel.id);
-    if (!newChannel.guild) return;
+  console.log('[DEBUG] ChannelUpdate event fired!', oldChannel.name, '->', newChannel.name, newChannel.id);
 
-    const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
-    if (!config?.logs?.channelUpdate) return;
+  if (!newChannel.guild) {
+    console.log('[DEBUG] No guild on newChannel');
+    return;
+  }
 
-    const logChannel = newChannel.guild.channels.cache.get(config.logs.channelUpdate);
-    if (!logChannel || !logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+  const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
+  if (!config) {
+    console.log('[DEBUG] No LogConfig for guild:', newChannel.guild.id);
+    return;
+  }
+  if (!config.logs?.channelUpdate) {
+    console.log('[DEBUG] No channelUpdate log config for guild:', newChannel.guild.id);
+    return;
+  }
 
-    const changes = [];
+  const logChannel = newChannel.guild.channels.cache.get(config.logs.channelUpdate);
+  if (!logChannel) {
+    console.log('[DEBUG] Log channel not found or not cached:', config.logs.channelUpdate);
+    return;
+  }
+  if (!logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) {
+    console.log('[DEBUG] No send permissions for log channel');
+    return;
+  }
 
-    if (oldChannel.name !== newChannel.name) {
-      changes.push({
-        name: 'Name Changed',
-        value: `**Before:** ${oldChannel.name}\n**After:** ${newChannel.name}`
-      });
-    }
+  // Only log if relevant changes
+  const changes = [];
+  if (oldChannel.name !== newChannel.name) {
+    changes.push({
+      name: 'Name Changed',
+      value: `**Before:** ${oldChannel.name}\n**After:** ${newChannel.name}`,
+    });
+  }
+  if ('topic' in oldChannel && oldChannel.topic !== newChannel.topic) {
+    changes.push({
+      name: 'Topic Changed',
+      value: `**Before:** ${oldChannel.topic || 'None'}\n**After:** ${newChannel.topic || 'None'}`,
+    });
+  }
 
-    if ('topic' in oldChannel && oldChannel.topic !== newChannel.topic) {
-      changes.push({
-        name: 'Topic Changed',
-        value: `**Before:** ${oldChannel.topic || 'None'}\n**After:** ${newChannel.topic || 'None'}`
-      });
-    }
+  if (changes.length === 0) {
+    console.log('[DEBUG] No relevant changes to log.');
+    return;
+  }
 
-    if (changes.length === 0) return; // no relevant changes
+  const embed = new EmbedBuilder()
+    .setColor(0xfee75c)
+    .setTitle('✏️ Channel Updated')
+    .addFields(...changes)
+    .addFields({ name: 'Channel', value: `<#${newChannel.id}>`, inline: false })
+    .setTimestamp();
 
-    const embed = new EmbedBuilder()
-      .setColor(0xfee75c)
-      .setTitle('✏️ Channel Updated')
-      .addFields(...changes)
-      .addFields({ name: 'Channel', value: `<#${newChannel.id}>`, inline: false })
-      .setTimestamp();
-
-    logChannel.send({ embeds: [embed] })
-  .then(() => console.log('[DEBUG] Sent channel update log!'))
-  .catch(err => console.error('[ERROR] Failed to send log:', err));
-  });
+  logChannel.send({ embeds: [embed] })
+    .then(() => console.log('[DEBUG] Sent channel update log!'))
+    .catch(err => console.error('[ERROR] Failed to send log:', err));
+});
 };
