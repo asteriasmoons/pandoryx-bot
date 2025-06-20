@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } = require('discord.js');
-const RolePanel = require('../models/RolePanel'); // Adjust if needed
+const RolePanel = require('../models/RolePanel'); // Adjust path as needed
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -61,6 +61,23 @@ module.exports = {
           opt.setName('channel').setDescription('Channel to publish in').addChannelTypes(ChannelType.GuildText).setRequired(true)
         )
     )
+    // EDITEMBED
+    .addSubcommand(sub =>
+      sub.setName('editembed')
+        .setDescription('Edit the embed content of a role panel')
+        .addStringOption(opt =>
+          opt.setName('name').setDescription('Panel name').setRequired(true)
+        )
+        .addStringOption(opt =>
+          opt.setName('title').setDescription('Embed title').setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt.setName('description').setDescription('Embed description').setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt.setName('color').setDescription('Hex color (e.g. #00bfff)').setRequired(false)
+        )
+    )
     // LIST
     .addSubcommand(sub =>
       sub.setName('list').setDescription('List all role panels in this server')
@@ -104,7 +121,11 @@ module.exports = {
         panelName: name,
         type,
         selectMode,
-        roles: []
+        roles: [],
+        // Add default values for embed fields
+        embedTitle: '',
+        embedDescription: '',
+        embedColor: '#00bfff'
       });
 
       return interaction.reply({
@@ -163,89 +184,88 @@ module.exports = {
       });
     }
 
-	// ---- PUBLISH ----
-if (sub === 'publish') {
-  const name = interaction.options.getString('name').trim();
-  const channel = interaction.options.getChannel('channel');
+    // ---- PUBLISH ----
+    if (sub === 'publish') {
+      const name = interaction.options.getString('name').trim();
+      const channel = interaction.options.getChannel('channel');
 
-  const panel = await RolePanel.findOne({ guildId: interaction.guild.id, panelName: name });
-  if (!panel) {
-    return interaction.reply({
-      content: `No panel named \`${name}\` exists in this server.`,
-      ephemeral: true
-    });
-  }
-  if (panel.roles.length === 0) {
-    return interaction.reply({
-      content: `Panel \`${name}\` has no roles added yet!`,
-      ephemeral: true
-    });
-  }
+      const panel = await RolePanel.findOne({ guildId: interaction.guild.id, panelName: name });
+      if (!panel) {
+        return interaction.reply({
+          content: `No panel named \`${name}\` exists in this server.`,
+          ephemeral: true
+        });
+      }
+      if (panel.roles.length === 0) {
+        return interaction.reply({
+          content: `Panel \`${name}\` has no roles added yet!`,
+          ephemeral: true
+        });
+      }
 
-  // Compose the embed
-  const embed = new EmbedBuilder()
-    .setTitle(panel.panelName)
-    .setDescription('Select your roles below:')
-    .setColor(0x00bfff);
+      // Compose the embed using custom fields or fallback defaults
+      const embed = new EmbedBuilder()
+        .setTitle(panel.embedTitle || panel.panelName)
+        .setDescription(panel.embedDescription || 'Select your roles below:')
+        .setColor(panel.embedColor || '#00bfff');
 
-  // === COMPONENTS ===
-  let components = [];
+      // === COMPONENTS ===
+      let components = [];
 
-  if (panel.type === 'button') {
-    // Make up to 5 buttons per row, 25 max
-    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-    const rows = [];
-    for (let i = 0; i < panel.roles.length; i += 5) {
-      const actionRow = new ActionRowBuilder();
-      actionRow.addComponents(
-        ...panel.roles.slice(i, i + 5).map(roleOpt =>
-          new ButtonBuilder()
-            .setCustomId(`rolepanel_button_${panel._id}_${roleOpt.roleId}`)
-            .setLabel(roleOpt.label)
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji(roleOpt.emoji || undefined)
-        )
-      );
-      rows.push(actionRow);
+      if (panel.type === 'button') {
+        const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+        const rows = [];
+        for (let i = 0; i < panel.roles.length; i += 5) {
+          const actionRow = new ActionRowBuilder();
+          actionRow.addComponents(
+            ...panel.roles.slice(i, i + 5).map(roleOpt =>
+              new ButtonBuilder()
+                .setCustomId(`rolepanel_button_${panel._id}_${roleOpt.roleId}`)
+                .setLabel(roleOpt.label)
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji(roleOpt.emoji || undefined)
+            )
+          );
+          rows.push(actionRow);
+        }
+        components = rows;
+      }
+
+      if (panel.type === 'select') {
+        const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
+        const select = new StringSelectMenuBuilder()
+          .setCustomId(`rolepanel_select_${panel._id}`)
+          .setPlaceholder('Choose your roles')
+          .setMinValues(0)
+          .setMaxValues(panel.selectMode === 'multi' ? panel.roles.length : 1)
+          .addOptions(
+            panel.roles.map(roleOpt => ({
+              label: roleOpt.label,
+              value: roleOpt.roleId,
+              emoji: roleOpt.emoji || undefined,
+              description: roleOpt.description || undefined
+            }))
+          );
+        components = [new ActionRowBuilder().addComponents(select)];
+      }
+
+      // Send the menu embed and save message/channel id
+      const message = await channel.send({ embeds: [embed], components });
+
+      panel.channelId = channel.id;
+      panel.messageId = message.id;
+      await panel.save();
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Panel Published')
+            .setDescription(`Panel \`${name}\` published in ${channel}. Users can now assign/remove roles by interacting!`)
+            .setColor(0x00bfff)
+        ],
+        ephemeral: true
+      });
     }
-    components = rows;
-  }
-
-  if (panel.type === 'select') {
-    const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
-    const select = new StringSelectMenuBuilder()
-      .setCustomId(`rolepanel_select_${panel._id}`)
-      .setPlaceholder('Choose your roles')
-      .setMinValues(0)
-      .setMaxValues(panel.selectMode === 'multi' ? panel.roles.length : 1)
-      .addOptions(
-        panel.roles.map(roleOpt => ({
-          label: roleOpt.label,
-          value: roleOpt.roleId,
-          emoji: roleOpt.emoji || undefined,
-          description: roleOpt.description || undefined
-        }))
-      );
-    components = [new ActionRowBuilder().addComponents(select)];
-  }
-
-  // Send the menu embed and save message/channel id
-  const message = await channel.send({ embeds: [embed], components });
-
-  panel.channelId = channel.id;
-  panel.messageId = message.id;
-  await panel.save();
-
-  return interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle('Panel Published')
-        .setDescription(`Panel \`${name}\` published in ${channel}. Users can now assign/remove roles by interacting!`)
-        .setColor(0x00bfff)
-    ],
-    ephemeral: true
-  });
-}
 
     // ---- LIST ----
     if (sub === 'list') {
@@ -284,7 +304,7 @@ if (sub === 'publish') {
         });
       }
 
-      // Optionally, try to delete the old menu message
+      // Try to delete the old menu message
       if (panel.channelId && panel.messageId) {
         const channel = await client.channels.fetch(panel.channelId).catch(() => null);
         if (channel) {
@@ -301,6 +321,44 @@ if (sub === 'publish') {
             .setTitle('Panel Deleted')
             .setDescription(`Panel \`${name}\` has been deleted.`)
             .setColor(0xff0000)
+        ],
+        ephemeral: true
+      });
+    }
+
+    // ---- EDITEMBED ----
+    if (sub === 'editembed') {
+      const name = interaction.options.getString('name').trim();
+      const panel = await RolePanel.findOne({ guildId: interaction.guild.id, panelName: name });
+      if (!panel) {
+        return interaction.reply({
+          content: `No panel named \`${name}\` exists in this server.`,
+          ephemeral: true
+        });
+      }
+
+      // Set new embed values (only if provided)
+      const title = interaction.options.getString('title');
+      const description = interaction.options.getString('description');
+      const color = interaction.options.getString('color');
+
+      if (title !== null) panel.embedTitle = title;
+      if (description !== null) panel.embedDescription = description;
+      if (color !== null) panel.embedColor = color;
+
+      await panel.save();
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Panel Embed Updated')
+            .setDescription(
+              `Panel \`${name}\` embed updated!\n` +
+              `${title !== null ? `**Title:** ${title}\n` : ''}` +
+              `${description !== null ? `**Description:** ${description}\n` : ''}` +
+              `${color !== null ? `**Color:** ${color}\n` : ''}`
+            )
+            .setColor(color || panel.embedColor || 0x00bfff)
         ],
         ephemeral: true
       });

@@ -17,6 +17,11 @@ const RolePanelSchema = new Schema({
       order: { type: Number, default: 0 },            // Optional: for custom ordering
     }
   ],
+  // Embed customization fields:
+  embedTitle: { type: String, default: '' },
+  embedDescription: { type: String, default: '' },
+  embedColor: { type: String, default: '#00bfff' },
+
   createdAt: { type: Date, default: Date.now }
 });
 
