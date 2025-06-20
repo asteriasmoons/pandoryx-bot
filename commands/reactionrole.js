@@ -43,6 +43,10 @@ module.exports = {
         .setDescription('Panel name')
         .setRequired(true)
     )
+)
+.addSubcommand(sub =>
+  sub.setName('list')
+    .setDescription('List all reaction role panels in this server')
 ),
 
   /**
@@ -222,6 +226,34 @@ module.exports = {
         ephemeral: true
       });
     }
+
+    // LIST REACTION ROLE PANELS
+    if (sub === 'list') {
+  const panels = await ReactionRoleMessage.find({ guildId: interaction.guild.id });
+  if (!panels.length) {
+    return interaction.reply({
+      content: 'No reaction role panels found in this server.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('Reaction Role Panels')
+    .setColor('#00bfff')
+    .setDescription(
+      panels
+        .map(panel => 
+          `**${panel.panelName}**\nChannel: <#${panel.channelId}>\nMessage: [Jump](https://discord.com/channels/${interaction.guild.id}/${panel.channelId}/${panel.messageId})\nRoles:\n` +
+          Object.entries(panel.emojiRoleMap)
+            .map(([emoji, roleId]) => `> ${emoji} → <@&${roleId}>`)
+            .join('\n') || '> _No roles set yet_'
+        )
+        .join('\n\n')
+    );
+
+  return interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
 	// DELETE PANEL
 if (sub === 'delete') {
   const panelName = interaction.options.getString('name');
