@@ -38,6 +38,7 @@ module.exports = {
           { label: 'Nickname Changed', value: 'nicknameChange' },
           { label: 'Avatar Changed', value: 'avatarChange' },
           { label: 'Channel Created', value: 'channelCreate' },
+          { label: 'Channel Updated', value: 'channelUpdate' },
           { label: 'Channel Deleted', value: 'channelDelete' },
           { label: 'Role Updated', value: 'roleUpdate' },
           { label: 'Warn', value: 'warn' },

@@ -12,6 +12,7 @@ const LogConfigSchema = new mongoose.Schema({
     nicknameChange: { type: String, default: null },
     avatarChange: { type: String, default: null },
     channelCreate: { type: String, default: null },
+    channelUpdate: { type: String, default: null },
     channelDelete: { type: String, default: null },
     warn: { type: String, default: null },
     timeout: { type: String, default: null },
