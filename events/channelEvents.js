@@ -53,7 +53,7 @@ module.exports = (client) => {
 
   // Channel Updated
   client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
-    console.log('[DEBUG] ChannelUpdate event fired!', channel.name, channel.id);
+    console.log('[DEBUG] ChannelUpdate event fired!', oldChannel.name, '->', newChannel.name, newChannel.id);
     if (!newChannel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
