@@ -1,5 +1,5 @@
 const { EmbedBuilder, Events, PermissionsBitField } = require('discord.js');
-const LogConfig = require('../models/LogConfig'); // Adjust if needed
+const LogConfig = require('../models/LogConfig'); // Adjust path if needed
 
 module.exports = (client) => {
   // Role Created
@@ -15,8 +15,9 @@ module.exports = (client) => {
       .setTitle('📌 Role Created')
       .addFields(
         { name: 'Name', value: role.name, inline: true },
-        { name: 'ID', value: role.id, inline: true },
-        { name: 'Color', value: role.hexColor, inline: true }
+        { name: 'Color', value: role.hexColor, inline: true },
+        { name: 'Role', value: `<@&${role.id}>`, inline: false },
+        { name: 'Role ID', value: `${role.id}`, inline: false }
       )
       .setTimestamp();
 
@@ -36,8 +37,9 @@ module.exports = (client) => {
       .setTitle('🗑️ Role Deleted')
       .addFields(
         { name: 'Name', value: role.name, inline: true },
-        { name: 'ID', value: role.id, inline: true },
-        { name: 'Color', value: role.hexColor, inline: true }
+        { name: 'Color', value: role.hexColor, inline: true },
+        { name: 'Role', value: `<@&${role.id}>`, inline: false },
+        { name: 'Role ID', value: `${role.id}`, inline: false }
       )
       .setTimestamp();
 
@@ -57,11 +59,9 @@ module.exports = (client) => {
     if (oldRole.name !== newRole.name) {
       changes.push({ name: 'Name Changed', value: `**Before:** ${oldRole.name}\n**After:** ${newRole.name}` });
     }
-
     if (oldRole.color !== newRole.color) {
       changes.push({ name: 'Color Changed', value: `**Before:** ${oldRole.hexColor}\n**After:** ${newRole.hexColor}` });
     }
-
     if (oldRole.permissions.bitfield !== newRole.permissions.bitfield) {
       changes.push({
         name: 'Permissions Changed',
@@ -75,7 +75,10 @@ module.exports = (client) => {
       .setColor(0xfee75c)
       .setTitle('✏️ Role Updated')
       .addFields(...changes)
-      .addFields({ name: 'Role', value: `<@&${newRole.id}>`, inline: false })
+      .addFields(
+        { name: 'Role', value: `<@&${newRole.id}>`, inline: false },
+        { name: 'Role ID', value: `${newRole.id}`, inline: false }
+      )
       .setTimestamp();
 
     logChannel.send({ embeds: [embed] }).catch(() => {});
