@@ -13,7 +13,6 @@ const LogConfigSchema = new mongoose.Schema({
     avatarChange: { type: String, default: null },
     channelCreate: { type: String, default: null },
     channelDelete: { type: String, default: null },
-    emojiUpdate: { type: String, default: null },
     warn: { type: String, default: null },
     timeout: { type: String, default: null },
     ban: { type: String, default: null },

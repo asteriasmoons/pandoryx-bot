@@ -40,7 +40,6 @@ module.exports = {
           { label: 'Channel Created', value: 'channelCreate' },
           { label: 'Channel Deleted', value: 'channelDelete' },
           { label: 'Role Updated', value: 'roleUpdate' },
-          { label: 'Emoji or Sticker Changed', value: 'emojiUpdate' },
           { label: 'Warn', value: 'warn' },
           { label: 'Timeout', value: 'timeout' },
           { label: 'Ban', value: 'ban' },
