@@ -87,6 +87,8 @@ module.exports = (client) => {
       .addFields({ name: 'Channel', value: `<#${newChannel.id}>`, inline: false })
       .setTimestamp();
 
-    logChannel.send({ embeds: [embed] }).catch(() => {});
+    logChannel.send({ embeds: [embed] })
+  .then(() => console.log('[DEBUG] Sent channel update log!'))
+  .catch(err => console.error('[ERROR] Failed to send log:', err));
   });
 };
