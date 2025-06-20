@@ -1,9 +1,12 @@
 const { EmbedBuilder, ChannelType, Events, PermissionsBitField } = require('discord.js');
 const LogConfig = require('../models/LogConfig'); // Adjust path if needed
 
+console.log('[DEBUG] channelEvents.js loaded!');
+
 module.exports = (client) => {
   // Channel Created
   client.on(Events.ChannelCreate, async (channel) => {
+   console.log('[DEBUG] ChannelCreate event fired!', channel.name, channel.id);
     if (!channel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: channel.guild.id });
@@ -50,6 +53,7 @@ module.exports = (client) => {
 
   // Channel Updated
   client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
+    console.log('[DEBUG] ChannelUpdate event fired!', channel.name, channel.id);
     if (!newChannel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
