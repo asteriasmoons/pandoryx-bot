@@ -1,11 +1,16 @@
 // events/messageCreate.js
 const StickyEmbed = require('../models/StickyEmbed');
 const { EmbedBuilder } = require('discord.js');
+const { handleLeveling } = require('../utils/leveling');
 
 module.exports = (client) => {
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
+    // --- LEVELING GOES HERE! ---
+    handleLeveling(message);
+
+     // ---- STICKY LOGIC ----
     // Find all stickies in this channel for this guild
     const stickies = await StickyEmbed.find({ guildId: message.guildId, 'stickies.channelId': message.channel.id });
     if (!stickies.length) return;
