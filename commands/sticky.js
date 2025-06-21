@@ -81,27 +81,29 @@ module.exports = {
       return interaction.reply({ content: `Sticky embed \`${name}\` updated.`, ephemeral: true });
     }
 
-    // SEND
-    if (sub === 'send') {
-      const name = interaction.options.getString('name');
-      const channel = interaction.options.getChannel('channel');
-      const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
-      if (!sticky) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
+    	// SEND
+		if (sub === 'send') {
+  		const name = interaction.options.getString('name');
+  		const channel = interaction.options.getChannel('channel');
+  		const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
+  		if (!sticky) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
 
-      const embed = new EmbedBuilder()
-        .setTitle(sticky.embed.title)
-        .setDescription(sticky.embed.description)
-        .setColor(sticky.embed.color || '#5865F2');
+  		const embed = new EmbedBuilder()
+    	.setTitle(sticky.embed.title)
+    	.setDescription(sticky.embed.description)
+    	.setColor(sticky.embed.color || '#5865F2');
 
-      const msg = await channel.send({ embeds: [embed] });
+  		const msg = await channel.send({ embeds: [embed] });
 
-      // Save messageId/channelId for future sticky logic if needed
-      sticky.channelId = channel.id;
-      sticky.messageId = msg.id;
-      await sticky.save();
+  		// Remove existing sticky for this channel if any
+  		sticky.stickies = sticky.stickies.filter(s => s.channelId !== channel.id);
 
-      return interaction.reply({ content: `Sticky embed \`${name}\` sent to ${channel}.`, ephemeral: true });
-    }
+  		// Add new sticky placement
+  		sticky.stickies.push({ channelId: channel.id, messageId: msg.id });
+  		await sticky.save();
+
+  		return interaction.reply({ content: `Sticky embed \`${name}\` sent to ${channel}.`, ephemeral: true });
+	}
 
     // DELETE
     if (sub === 'delete') {
