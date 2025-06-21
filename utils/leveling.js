@@ -4,6 +4,7 @@ const UserLevel = require('../models/UserLevel');
 const GuildConfig = require('../models/GuildConfig');
 
 const DEFAULT_THRESHOLDS = [0, 5, 10, 25, 50, 100, 200];
+const DEFAULT_LVLUP = '<@{userId}> leveled up to **Level {level}**! 🎉';
 
 async function handleLeveling(message) {
   // Ignore bots or DMs
@@ -33,11 +34,19 @@ async function handleLeveling(message) {
     userData.level = newLevel;
     await userData.save();
 
+    // --- Build custom level-up message ---
+    const template = config?.levelUpMessage || DEFAULT_LVLUP;
+    const levelUpText = template
+      .replaceAll('{userId}', userId)
+      .replaceAll('{level}', newLevel)
+      .replaceAll('{username}', message.author.username)
+      .replaceAll('{mention}', `<@${userId}>`);
+
     // Level up announcement as embed
     const levelEmbed = new EmbedBuilder()
       .setColor(0x663399)
       .setTitle('Level Up!')
-      .setDescription(`<@${userId}> leveled up to **Level ${newLevel}**!`)
+      .setDescription(levelUpText)
       .addFields(
         { name: 'Total Messages', value: `${userData.messages}`, inline: true }
       )

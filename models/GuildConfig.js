@@ -15,7 +15,12 @@ const GuildConfigSchema = new mongoose.Schema({
       }
     ],
     default: []
-  }
+  },
+  // Add to your GuildConfigSchema:
+levelUpMessage: {
+  type: String,
+  default: '<@{userId}> leveled up to **Level {level}**! 🎉'
+}
 });
 
 module.exports = mongoose.model('GuildConfig', GuildConfigSchema);

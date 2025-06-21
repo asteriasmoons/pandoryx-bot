@@ -4,6 +4,7 @@ const GuildConfig = require('../models/GuildConfig');
 const UserLevel = require('../models/UserLevel');
 
 const DEFAULT_THRESHOLDS = [0, 5, 10, 25, 50, 100, 200];
+const DEFAULT_LVLUP = '<@{userId}> leveled up to **Level {level}**! 🎉';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -47,6 +48,16 @@ module.exports = {
         .setDescription('Reset a user\'s level and message count')
         .addUserOption(opt =>
           opt.setName('user').setDescription('User to reset').setRequired(true)
+        )
+    )
+    // SET ANNOUNCEMENT
+    .addSubcommand(sub =>
+      sub.setName('set-announcement')
+        .setDescription('Set the level-up announcement description')
+        .addStringOption(opt =>
+          opt.setName('description')
+            .setDescription('Message (use {userId}, {level}, {username}, {mention})')
+            .setRequired(true)
         )
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -185,6 +196,36 @@ module.exports = {
         .setColor(0xfaa61a)
         .setTitle('Level Reset')
         .setDescription(`${targetUser.username}'s level and message count have been reset.`);
+
+      return interaction.reply({ embeds: [embed] });
+    }
+
+    // ---- SET ANNOUNCEMENT ----
+    if (sub === 'set-announcement') {
+      const desc = interaction.options.getString('description').slice(0, 500);
+      await GuildConfig.findOneAndUpdate(
+        { guildId },
+        { $set: { levelUpMessage: desc } },
+        { upsert: true }
+      );
+
+      // Preview for admin (using command user's info)
+      const preview = desc
+        .replaceAll('{userId}', interaction.user.id)
+        .replaceAll('{level}', '7')
+        .replaceAll('{username}', interaction.user.username)
+        .replaceAll('{mention}', `<@${interaction.user.id}>`);
+
+      const embed = new EmbedBuilder()
+        .setColor(0x43b581)
+        .setTitle('Level Up Announcement Updated')
+        .setDescription([
+          'New announcement template saved!',
+          'You can use `{userId}`, `{level}`, `{username}`, `{mention}` as placeholders.',
+          '',
+          `**Preview:**`,
+          preview
+        ].join('\n'));
 
       return interaction.reply({ embeds: [embed] });
     }
