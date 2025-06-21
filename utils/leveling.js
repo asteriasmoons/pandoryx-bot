@@ -1,5 +1,5 @@
 // utils/leveling.js
-
+const { EmbedBuilder } = require('discord.js');
 const UserLevel = require('../models/UserLevel');
 const GuildConfig = require('../models/GuildConfig');
 
@@ -33,10 +33,18 @@ async function handleLeveling(message) {
     userData.level = newLevel;
     await userData.save();
 
-    // Level up announcement
-    await message.channel.send(
-      `<@${userId}> leveled up! They are now **Level ${newLevel}**! 🎉`
-    );
+    // Level up announcement as embed
+    const levelEmbed = new EmbedBuilder()
+      .setColor(0x43b581)
+      .setTitle('Level Up! 🎉')
+      .setDescription(`<@${userId}> leveled up to **Level ${newLevel}**!`)
+      .addFields(
+        { name: 'Total Messages', value: `${userData.messages}`, inline: true }
+      )
+      .setTimestamp()
+      .setThumbnail(message.author.displayAvatarURL?.());
+
+    await message.channel.send({ embeds: [levelEmbed] });
 
     // Reward role
     const rewardRole = config?.levelRoles?.find(r => r.level === newLevel);
@@ -44,6 +52,16 @@ async function handleLeveling(message) {
       try {
         const member = await message.guild.members.fetch(userId);
         await member.roles.add(rewardRole.roleId);
+
+        // Optional: Announce role reward as embed
+        const roleEmbed = new EmbedBuilder()
+          .setColor(0x5865F2)
+          .setDescription(
+            `<@${userId}> has been awarded the role <@&${rewardRole.roleId}> for reaching Level ${newLevel}!`
+          )
+          .setTimestamp();
+        await message.channel.send({ embeds: [roleEmbed] });
+
       } catch (err) {
         console.error(`Could not assign level role:`, err);
       }
