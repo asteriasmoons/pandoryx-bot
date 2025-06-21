@@ -11,8 +11,8 @@ module.exports = (client) => {
     if (!logChannel) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0x57f287)
-      .setTitle('📥 Member Joined')
+      .setColor(0x8757f2)
+      .setTitle('Member Joined')
       .setDescription(`${member} (${member.user.tag}) joined the server.`)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
@@ -29,8 +29,8 @@ module.exports = (client) => {
     if (!logChannel) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0xed4245)
-      .setTitle('📤 Member Left')
+      .setColor(0x8757f2)
+      .setTitle('Member Left')
       .setDescription(`${member.user.tag} (${member.id}) left the server.`)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
@@ -62,8 +62,8 @@ module.exports = (client) => {
       config.logs.nicknameChange
     ) {
       embed
-        .setColor(0xfee75c)
-        .setTitle('✏️ Nickname Changed')
+        .setColor(0x8757f2)
+        .setTitle('Nickname Changed')
         .addFields(
           { name: 'User', value: `${newMember.user.tag} (${newMember.id})` },
           { name: 'Before', value: oldMember.nickname || 'None', inline: true },
@@ -82,8 +82,8 @@ module.exports = (client) => {
 
     if ((addedRoles.length > 0 || removedRoles.length > 0) && config.logs.roleUpdate) {
       embed
-        .setColor(0x5865f2)
-        .setTitle('🎭 Roles Updated')
+        .setColor(0x8757f2)
+        .setTitle('Roles Updated')
         .setDescription(`${newMember.user.tag} (${newMember.id}) had their roles changed.`);
 
       // Build only valid fields
@@ -136,8 +136,8 @@ module.exports = (client) => {
         config.logs.usernameChange
       ) {
         embed
-          .setColor(0xfee75c)
-          .setTitle('🪪 Username Changed')
+          .setColor(0x8757f2)
+          .setTitle('Username Changed')
           .setDescription(`**Before:** ${oldUser.username}\n**After:** ${newUser.username}`)
           .setThumbnail(newUser.displayAvatarURL({ dynamic: true }));
 
@@ -149,8 +149,8 @@ module.exports = (client) => {
         config.logs.avatarChange
       ) {
         embed
-          .setColor(0x3498db)
-          .setTitle('🖼️ Avatar Changed')
+          .setColor(0x8757f2)
+          .setTitle('Avatar Changed')
           .setDescription(`${newUser.tag} updated their avatar.`)
           .setImage(newUser.displayAvatarURL({ dynamic: true }));
 

@@ -11,8 +11,8 @@ module.exports = (client) => {
     if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0x57f287)
-      .setTitle('📌 Role Created')
+      .setColor(0xff34cd)
+      .setTitle('Role Created')
       .addFields(
         { name: 'Name', value: role.name, inline: true },
         { name: 'Color', value: role.hexColor, inline: true },
@@ -33,8 +33,8 @@ module.exports = (client) => {
     if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0xed4245)
-      .setTitle('🗑️ Role Deleted')
+      .setColor(0xff34cd)
+      .setTitle('Role Deleted')
       .addFields(
         { name: 'Name', value: role.name, inline: true },
         { name: 'Color', value: role.hexColor, inline: true },
@@ -72,8 +72,8 @@ module.exports = (client) => {
     if (changes.length === 0) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0xfee75c)
-      .setTitle('✏️ Role Updated')
+      .setColor(0xff34cd)
+      .setTitle('Role Updated')
       .addFields(...changes)
       .addFields(
         { name: 'Role', value: `<@&${newRole.id}>`, inline: false },

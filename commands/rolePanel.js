@@ -125,7 +125,7 @@ module.exports = {
         // Add default values for embed fields
         embedTitle: '',
         embedDescription: '',
-        embedColor: '#00bfff'
+        embedColor: '#00e6e6'
       });
 
       return interaction.reply({
@@ -133,7 +133,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Role Panel Created')
             .setDescription(`Panel: \`${name}\` (${type}${type === 'select' ? `, ${selectMode}-select` : ''}) created!\nUse \`/rolepanel addrole\` to add roles, then \`/rolepanel publish\` to post.`)
-            .setColor(0x00bfff)
+            .setColor(0x00e6e6)
         ],
         ephemeral: true
       });
@@ -178,7 +178,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Role Added')
             .setDescription(`Added ${emoji ? `${emoji} ` : ''}<@&${role.id}> as **${label}** to panel \`${name}\``)
-            .setColor(0x00bfff)
+            .setColor(0x00e6e6)
         ],
         ephemeral: true
       });
@@ -207,7 +207,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle(panel.embedTitle || panel.panelName)
         .setDescription(panel.embedDescription || 'Select your roles below:')
-        .setColor(panel.embedColor || '#00bfff');
+        .setColor(panel.embedColor || '#00e6e6');
 
       // === COMPONENTS ===
       let components = [];
@@ -261,7 +261,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Panel Published')
             .setDescription(`Panel \`${name}\` published in ${channel}. Users can now assign/remove roles by interacting!`)
-            .setColor(0x00bfff)
+            .setColor(0x00e6e6)
         ],
         ephemeral: true
       });
@@ -278,7 +278,7 @@ module.exports = {
       }
       const embed = new EmbedBuilder()
         .setTitle('Role Panels')
-        .setColor(0x00bfff);
+        .setColor(0x00e6e6);
 
       for (const panel of panels) {
         embed.addFields({
@@ -320,7 +320,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Panel Deleted')
             .setDescription(`Panel \`${name}\` has been deleted.`)
-            .setColor(0xff0000)
+            .setColor(0x00e6e6)
         ],
         ephemeral: true
       });
@@ -358,7 +358,7 @@ module.exports = {
               `${description !== null ? `**Description:** ${description}\n` : ''}` +
               `${color !== null ? `**Color:** ${color}\n` : ''}`
             )
-            .setColor(color || panel.embedColor || 0x00bfff)
+            .setColor(color || panel.embedColor || 0x00e6e6)
         ],
         ephemeral: true
       });

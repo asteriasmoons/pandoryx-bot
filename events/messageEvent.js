@@ -11,8 +11,8 @@ module.exports = (client) => {
     if (!logChannelId) return;
 
     const embed = new EmbedBuilder()
-      .setTitle('🗑️ Message Deleted')
-      .setColor(0xFF5555)
+      .setTitle('Message Deleted')
+      .setColor(0xff34cd)
       .setDescription(`**Author:** ${message.author.tag} (${message.author.id})\n` +
                       `**Channel:** <#${message.channel.id}>\n` +
                       `**Content:**\n${message.content}`)
@@ -31,8 +31,8 @@ module.exports = (client) => {
     if (!logChannelId) return;
 
     const embed = new EmbedBuilder()
-      .setTitle('✏️ Message Edited')
-      .setColor(0x00B0F4)
+      .setTitle('Message Edited')
+      .setColor(0xff34cd)
       .setDescription(`**Author:** ${newMessage.author.tag} (${newMessage.author.id})\n` +
                       `**Channel:** <#${newMessage.channel.id}>`)
       .addFields(
@@ -58,8 +58,8 @@ module.exports = (client) => {
     ).join('\n');
 
     const embed = new EmbedBuilder()
-      .setTitle('🧹 Bulk Message Delete')
-      .setColor(0xFF9900)
+      .setTitle('Bulk Message Delete')
+      .setColor(0xff34cd)
       .setDescription(`**Messages Deleted:** ${messages.size}\n` +
                       `**Channel:** <#${first.channel.id}>\n\n` +
                       `**Sample:**\n\`\`\`\n${contentPreview}\n\`\`\``)
