@@ -6,15 +6,18 @@ module.exports = (client) => {
   client.on(Events.GuildMemberAdd, async (member) => {
     const config = await LogConfig.findOne({ guildId: member.guild.id });
     if (!config?.logs?.memberJoin) return;
-
     const logChannel = member.guild.channels.cache.get(config.logs.memberJoin);
     if (!logChannel) return;
 
     const embed = new EmbedBuilder()
       .setColor(0x8757f2)
-      .setTitle('Member Joined')
-      .setDescription(`${member} (${member.user.tag}) joined the server.`)
+      .setTitle(member.user.tag)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+      .addFields(
+        { name: 'User', value: `<@${member.id}>`, inline: true },
+        { name: 'ID', value: member.id, inline: true }
+      )
+      .setFooter({ text: member.guild.name })
       .setTimestamp();
 
     logChannel.send({ embeds: [embed] }).catch(() => {});
@@ -24,15 +27,26 @@ module.exports = (client) => {
   client.on(Events.GuildMemberRemove, async (member) => {
     const config = await LogConfig.findOne({ guildId: member.guild.id });
     if (!config?.logs?.memberLeave) return;
-
     const logChannel = member.guild.channels.cache.get(config.logs.memberLeave);
     if (!logChannel) return;
 
+    // Discord join date & roles in the guild
+    const joinedDiscord = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`;
+    const roles = member.roles.cache
+      .filter(r => r.id !== member.guild.id)
+      .map(r => `<@&${r.id}>`)
+      .join(', ') || 'None';
+
     const embed = new EmbedBuilder()
       .setColor(0x8757f2)
-      .setTitle('Member Left')
-      .setDescription(`${member.user.tag} (${member.id}) left the server.`)
+      .setTitle(member.user.tag)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+      .addFields(
+        { name: 'User', value: `<@${member.id}>`, inline: true },
+        { name: 'Joined Discord', value: joinedDiscord, inline: true },
+        { name: 'Roles', value: roles, inline: false }
+      )
+      .setFooter({ text: member.guild.name })
       .setTimestamp();
 
     logChannel.send({ embeds: [embed] }).catch(() => {});
