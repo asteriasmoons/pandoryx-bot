@@ -13,7 +13,8 @@ module.exports = {
 	.setColor('#ff51fe')
 	.setDescription('This is the help menu for the bot. All commands are listed here and are clickable, so you can use them immediately by selecting them. Commands are organized into groups, and each page of the help menu explains what each command does within its group, making it easy to find and understand the features you need.')
 	.addFields(
-		{ name: '</help:1375869926400725152>', value: 'The help command with pages.' }
+		{ name: '</help:1375869926400725152>', value: 'The help command with pages.' },
+        { name: '', value: 'Clears an amount of messages in a channel.' }
 	)
 	.setFooter({ text: 'Pandoryx Help Pages' });
 
@@ -93,20 +94,67 @@ module.exports = {
 	)
 	.setFooter({ text: 'Pandoryx Help Pages' });
 
+    const reactionRoleCmds = new EmbedBuilder()
+    .setTitle('**Reaction Role Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</reactionrole create:1376019124861272134>', value: 'Creates a reaction role text or embed menu' },
+        { name: '</reactionrole add:1376019124861272134>', value: 'Add a role and emoji to your panel you created' },
+        { name: '</reactionrole remove:1376019124861272134>', value: 'Remove a role and emoji from the panel you created by name' },
+        { name: '</reactionrole delete:1376019124861272134>', value: 'Delete a reaction role panel you created by name.' },
+        { name: '</reactionrole list:1376019124861272134>', value: 'List all reaction role panels you have created and their names.' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
 	const ticketCmds = new EmbedBuilder()
 	.setTitle('**Ticket Commands**')
 	.setColor('#ff51fe')
-	.addFields(
-		{ name: '</ticket panel create:1375475684813574290>', value: 'Create a new ticket panel with a panel name, title, description, color and emoji.' },
-		{ name: '</ticket panel send:1375475684813574290>', value: 'Send a ticket panel in the current channel.' },
-		{ name: '</ticket panel edit:1375475684813574290>', value: 'Edit a ticket panel you created by name.' },
-		{ name: '</ticket panel delete:1375475684813574290>', value: 'Delete a ticket panel you created by name.' },
-		{ name: '</ticket config transcript:1375475684813574290>', value: 'Configure the ticket transcripts channel.' },
-		{ name: '</ticket config staffrole:1375475684813574290>', value: 'Configure a staff role for ticket handling.' }
-	)
-	.setFooter({ text: 'Pandoryx Help Pages' });
+    .addFields(
+        { name: '</ticketpanel create:1384207275031265300>', value: 'Create a ticket panel using buttons and select menus' },
+        { name: '</ticketpanel edit:1384207275031265300>', value: 'Edit a ticket panel by name using the same buttons and select menus ui as the creation process' },
+        { name: '</ticketpanel delete:1384207275031265300>', value: 'Delete a ticket panel you created by name' },
+        { name: '</ticketpanel list:1384207275031265300>', value: 'List all the ticket panels youve created and their names' },
+        { name: '</ticketpanel post:1384207275031265300>', value: 'Post a ticket panel to a channel of your choice.' },
+        { name: '</ticketpanel setrole:1384207275031265300>', value: 'Set the role to be pinged upon ticket opening such as @mods' },
+        { name: '</ticketpanel settranscriptchannel:1384207275031265300>', value: 'Set the channel for transcripts to go to' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
 
-	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, ticketCmds];
+    const logCmds = new EmbedBuilder()
+    .setTitle('**Log Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</log config:1385287365211455549>', value: 'Sends you the log config panel to configure events' },
+        { name: '</log view:1385287365211455549>', value: 'View how your event logs are setup' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const rolePanelCmds = new EmbedBuilder()
+    .setTitle('**Role Panel Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</rolepanel create:1385699654213173298>', value: 'Create a role panel with either buttons or select menus' },
+        { name: '</rolepanel addrole:1385699654213173298>', value: 'Add roles, emojis, label to your role panel by name' },
+        { name: '</rolepanel publish:1385699654213173298>', value: 'Publish your role panel to a channel' },
+        { name: '</rolepanel editembed:1385699654213173298>', value: 'Edit the panel embed that your buttons or menus are attached to' },
+        { name: '</rolepanel list:1385699654213173298>', value: 'List all of the role panels youve created by name' },
+        { name: '</rolepanel delete:1385699654213173298>', value: 'Delete a role panel' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const stickyCmds = new EmbedBuilder()
+    .setTitle('**Sticky Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</sticky embed create:1385805709748342855>', value: 'Create a sticky embed message' },
+        { name: '</sticky embed edit:1385805709748342855>', value: 'Edit a sticky embed message you created by name' },
+        { name: '</sticky embed send:1385805709748342855>', value: 'Choose which sticky embed to send and which channel to send it to' },
+        { name: '</sticky embed delete:1385805709748342855>', value: 'Delete a sticky embed using its name and the channel its in' },
+        { name: '</sticky embed remove:1385805709748342855>', value: 'Removes a sticky embed without deleting it' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds];
 
     // Embed navigation logic
     let currentPage = 0;
