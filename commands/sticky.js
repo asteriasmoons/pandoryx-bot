@@ -54,26 +54,31 @@ module.exports = {
   const channel = interaction.options.getChannel('channel');
 
   const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
-  if (!sticky) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
 
-  // Find the sticky info for this channel
+  if (!sticky) {
+    await interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
+    return;
+  }
+
   const stickyInfo = sticky.stickies.find(s => s.channelId === channel.id);
 
-  // Delete the last sticky message in the channel, if present
+  // Try to delete the old sticky message if possible
   if (stickyInfo && stickyInfo.messageId) {
     try {
       const msg = await channel.messages.fetch(stickyInfo.messageId);
       if (msg) await msg.delete();
     } catch (e) {
-      // Ignore if already deleted or missing permissions
+      // Ignore errors (message might not exist or can't delete)
+      console.log('Could not delete old sticky message:', e.message);
     }
   }
 
-  // Remove the sticky from this channel
+  // Remove the sticky assignment for this channel
   sticky.stickies = sticky.stickies.filter(s => s.channelId !== channel.id);
   await sticky.save();
 
-  return interaction.reply({ content: `Sticky embed \`${name}\` removed from ${channel}.`, ephemeral: true });
+  await interaction.reply({ content: `Sticky embed \`${name}\` removed from ${channel}.`, ephemeral: true });
+  return;
 }
 
     // CREATE
