@@ -35,51 +35,51 @@ module.exports = {
             .setDescription('Delete a sticky embed')
             .addStringOption(opt => opt.setName('name').setDescription('Name of the sticky embed').setRequired(true))
         )
-    )
-	.addSubcommand(sub =>
-  sub.setName('remove')
-    .setDescription('Remove a sticky embed from a channel')
-    .addStringOption(opt => opt.setName('name').setDescription('Name of the sticky embed').setRequired(true))
-    .addChannelOption(opt => opt.setName('channel').setDescription('Channel to remove from').setRequired(true).addChannelTypes(ChannelType.GuildText))
-),
+        .addSubcommand(sub =>
+          sub.setName('remove')
+            .setDescription('Remove a sticky embed from a channel')
+            .addStringOption(opt => opt.setName('name').setDescription('Name of the sticky embed').setRequired(true))
+            .addChannelOption(opt => opt.setName('channel').setDescription('Channel to remove from').setRequired(true).addChannelTypes(ChannelType.GuildText))
+        )
+    ),
+
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup();
     const sub = interaction.options.getSubcommand();
 
     if (group !== 'embed') return;
 
-	// REMOVE STICKY
-	if (sub === 'remove') {
-  const name = interaction.options.getString('name');
-  const channel = interaction.options.getChannel('channel');
+    // REMOVE STICKY
+    if (sub === 'remove') {
+      const name = interaction.options.getString('name');
+      const channel = interaction.options.getChannel('channel');
+      const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
 
-  const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
+      if (!sticky) {
+        await interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
+        return;
+      }
 
-  if (!sticky) {
-    await interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
-    return;
-  }
+      const stickyInfo = sticky.stickies?.find(s => s.channelId === channel.id);
 
-  const stickyInfo = sticky.stickies.find(s => s.channelId === channel.id);
+      // Try to delete the old sticky message if possible
+      if (stickyInfo && stickyInfo.messageId) {
+        try {
+          const msg = await channel.messages.fetch(stickyInfo.messageId);
+          if (msg) await msg.delete();
+        } catch (e) {
+          // Ignore errors (message might not exist or can't delete)
+          console.log('Could not delete old sticky message:', e.message);
+        }
+      }
 
-  // Try to delete the old sticky message if possible
-  if (stickyInfo && stickyInfo.messageId) {
-    try {
-      const msg = await channel.messages.fetch(stickyInfo.messageId);
-      if (msg) await msg.delete();
-    } catch (e) {
-      // Ignore errors (message might not exist or can't delete)
-      console.log('Could not delete old sticky message:', e.message);
+      // Remove the sticky assignment for this channel
+      sticky.stickies = sticky.stickies?.filter(s => s.channelId !== channel.id) || [];
+      await sticky.save();
+
+      await interaction.reply({ content: `Sticky embed \`${name}\` removed from ${channel}.`, ephemeral: true });
+      return;
     }
-  }
-
-  // Remove the sticky assignment for this channel
-  sticky.stickies = sticky.stickies.filter(s => s.channelId !== channel.id);
-  await sticky.save();
-
-  await interaction.reply({ content: `Sticky embed \`${name}\` removed from ${channel}.`, ephemeral: true });
-  return;
-}
 
     // CREATE
     if (sub === 'create') {
@@ -96,6 +96,7 @@ module.exports = {
         guildId: interaction.guildId,
         name,
         embed: { title, description, color },
+        stickies: [],
       });
 
       return interaction.reply({ content: `Sticky embed \`${name}\` created.`, ephemeral: true });
@@ -120,29 +121,29 @@ module.exports = {
       return interaction.reply({ content: `Sticky embed \`${name}\` updated.`, ephemeral: true });
     }
 
-    	// SEND
-		if (sub === 'send') {
-  		const name = interaction.options.getString('name');
-  		const channel = interaction.options.getChannel('channel');
-  		const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
-  		if (!sticky) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
+    // SEND
+    if (sub === 'send') {
+      const name = interaction.options.getString('name');
+      const channel = interaction.options.getChannel('channel');
+      const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
+      if (!sticky) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
 
-  		const embed = new EmbedBuilder()
-    	.setTitle(sticky.embed.title)
-    	.setDescription(sticky.embed.description)
-    	.setColor(sticky.embed.color || '#5865F2');
+      const embed = new EmbedBuilder()
+        .setTitle(sticky.embed.title)
+        .setDescription(sticky.embed.description)
+        .setColor(sticky.embed.color || '#5865F2');
 
-  		const msg = await channel.send({ embeds: [embed] });
+      const msg = await channel.send({ embeds: [embed] });
 
-  		// Remove existing sticky for this channel if any
-  		sticky.stickies = sticky.stickies.filter(s => s.channelId !== channel.id);
+      // Remove existing sticky for this channel if any
+      sticky.stickies = sticky.stickies?.filter(s => s.channelId !== channel.id) || [];
 
-  		// Add new sticky placement
-  		sticky.stickies.push({ channelId: channel.id, messageId: msg.id });
-  		await sticky.save();
+      // Add new sticky placement
+      sticky.stickies.push({ channelId: channel.id, messageId: msg.id });
+      await sticky.save();
 
-  		return interaction.reply({ content: `Sticky embed \`${name}\` sent to ${channel}.`, ephemeral: true });
-	}
+      return interaction.reply({ content: `Sticky embed \`${name}\` sent to ${channel}.`, ephemeral: true });
+    }
 
     // DELETE
     if (sub === 'delete') {
