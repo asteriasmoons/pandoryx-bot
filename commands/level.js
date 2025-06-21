@@ -1,6 +1,5 @@
 // commands/level.js
-
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const GuildConfig = require('../models/GuildConfig');
 const UserLevel = require('../models/UserLevel');
 
@@ -42,6 +41,14 @@ module.exports = {
       sub.setName('role-list')
         .setDescription('List all configured reward roles')
     )
+    // RESET
+    .addSubcommand(sub =>
+      sub.setName('reset')
+        .setDescription('Reset a user\'s level and message count')
+        .addUserOption(opt =>
+          opt.setName('user').setDescription('User to reset').setRequired(true)
+        )
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
@@ -50,20 +57,16 @@ module.exports = {
 
     // ---- PROFILE ----
     if (sub === 'profile') {
-      // Get target user or default to command user
       const user = interaction.options.getUser('user') || interaction.user;
 
-      // Fetch user level data
       let userData = await UserLevel.findOne({ guildId, userId: user.id });
       if (!userData) {
         userData = await UserLevel.create({ guildId, userId: user.id });
       }
 
-      // Fetch thresholds
       const config = await GuildConfig.findOne({ guildId });
       const thresholds = config?.levelThresholds || DEFAULT_THRESHOLDS;
 
-      // Find user's current and next level
       let currentLevel = 0;
       let nextLevelAt = thresholds[1] || null;
       for (let i = 0; i < thresholds.length; i++) {
@@ -74,23 +77,20 @@ module.exports = {
       }
       const messagesToNext = nextLevelAt ? nextLevelAt - userData.messages : 0;
 
-      // Get role for this level, if exists
       const rewardRole = config?.levelRoles?.find(r => r.level === currentLevel);
 
-      // Build embed
-      const embed = {
-        title: `${user.username}'s Level Profile`,
-        description: [
+      const embed = new EmbedBuilder()
+        .setTitle(`${user.username}'s Level Profile`)
+        .setColor(0x7289da)
+        .setThumbnail(user.displayAvatarURL?.())
+        .setDescription([
           `**Level:** ${currentLevel}`,
           `**Total Messages:** ${userData.messages}`,
           nextLevelAt
             ? `**Messages to next level (${currentLevel + 1}):** ${messagesToNext}`
             : `🎉 **Max level reached!**`,
           rewardRole ? `**Reward Role:** <@&${rewardRole.roleId}>` : null
-        ].filter(Boolean).join('\n'),
-        color: 0x7289da,
-        thumbnail: { url: user.displayAvatarURL?.() }
-      };
+        ].filter(Boolean).join('\n'));
 
       return interaction.reply({ embeds: [embed] });
     }
@@ -103,7 +103,6 @@ module.exports = {
         return interaction.reply({ content: 'Level must be at least 1.', ephemeral: true });
       }
 
-      // Remove existing for that level, then add new one
       const config = await GuildConfig.findOneAndUpdate(
         { guildId },
         { $pull: { levelRoles: { level } } },
@@ -112,41 +111,82 @@ module.exports = {
       config.levelRoles.push({ level, roleId: role.id });
       await config.save();
 
-      return interaction.reply({
-        content: `Role <@&${role.id}> will now be awarded at level ${level}.`
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0x43b581)
+        .setTitle('Level Role Added')
+        .setDescription(`Role <@&${role.id}> will now be awarded at level ${level}.`);
+
+      return interaction.reply({ embeds: [embed] });
     }
 
     // ---- ROLE REMOVE ----
     if (sub === 'role-remove') {
       const level = interaction.options.getInteger('level');
-      const config = await GuildConfig.findOneAndUpdate(
+      await GuildConfig.findOneAndUpdate(
         { guildId },
         { $pull: { levelRoles: { level } } },
         { upsert: true, new: true }
       );
-      return interaction.reply({
-        content: `Role reward for level ${level} has been removed.`
-      });
+
+      const embed = new EmbedBuilder()
+        .setColor(0xed4245)
+        .setTitle('Level Role Removed')
+        .setDescription(`Role reward for level ${level} has been removed.`);
+
+      return interaction.reply({ embeds: [embed] });
     }
 
     // ---- ROLE LIST ----
     if (sub === 'role-list') {
       const config = await GuildConfig.findOne({ guildId });
       if (!config || !config.levelRoles.length) {
-        return interaction.reply({ content: 'No level roles are configured yet.', ephemeral: true });
+        return interaction.reply({
+          embeds: [new EmbedBuilder()
+            .setColor(0x7289da)
+            .setTitle('Configured Level Roles')
+            .setDescription('No level roles are configured yet.')
+          ],
+          ephemeral: true
+        });
       }
       const lines = config.levelRoles
         .sort((a, b) => a.level - b.level)
         .map(lr => `Level ${lr.level}: <@&${lr.roleId}>`);
 
-      return interaction.reply({
-        embeds: [{
-          title: 'Configured Level Roles',
-          description: lines.join('\n'),
-          color: 0x7289da
-        }]
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0x7289da)
+        .setTitle('Configured Level Roles')
+        .setDescription(lines.join('\n'));
+
+      return interaction.reply({ embeds: [embed] });
+    }
+
+    // ---- RESET ----
+    if (sub === 'reset') {
+      const targetUser = interaction.options.getUser('user');
+      const userData = await UserLevel.findOne({ guildId, userId: targetUser.id });
+
+      if (!userData) {
+        return interaction.reply({
+          embeds: [new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle('Level Reset')
+            .setDescription(`${targetUser.username} has no leveling data to reset.`)
+          ],
+          ephemeral: true
+        });
+      }
+
+      userData.level = 0;
+      userData.messages = 0;
+      await userData.save();
+
+      const embed = new EmbedBuilder()
+        .setColor(0xfaa61a)
+        .setTitle('Level Reset')
+        .setDescription(`${targetUser.username}'s level and message count have been reset.`);
+
+      return interaction.reply({ embeds: [embed] });
     }
   }
 };

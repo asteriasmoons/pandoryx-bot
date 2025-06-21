@@ -35,8 +35,8 @@ async function handleLeveling(message) {
 
     // Level up announcement as embed
     const levelEmbed = new EmbedBuilder()
-      .setColor(0x43b581)
-      .setTitle('Level Up! 🎉')
+      .setColor(0x663399)
+      .setTitle('Level Up!')
       .setDescription(`<@${userId}> leveled up to **Level ${newLevel}**!`)
       .addFields(
         { name: 'Total Messages', value: `${userData.messages}`, inline: true }
@@ -55,7 +55,7 @@ async function handleLeveling(message) {
 
         // Optional: Announce role reward as embed
         const roleEmbed = new EmbedBuilder()
-          .setColor(0x5865F2)
+          .setColor(0x663399)
           .setDescription(
             `<@${userId}> has been awarded the role <@&${rewardRole.roleId}> for reaching Level ${newLevel}!`
           )
