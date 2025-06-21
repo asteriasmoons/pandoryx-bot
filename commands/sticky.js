@@ -41,7 +41,11 @@ module.exports = {
             .addStringOption(opt => opt.setName('name').setDescription('Name of the sticky embed').setRequired(true))
             .addChannelOption(opt => opt.setName('channel').setDescription('Channel to remove from').setRequired(true).addChannelTypes(ChannelType.GuildText))
         )
-    ),
+        .addSubcommand(sub =>
+          sub.setName('list')
+            .setDescription('List all sticky embeds in this server')
+        )
+      ),
 
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup();
@@ -152,5 +156,27 @@ module.exports = {
       if (!deleted) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
       return interaction.reply({ content: `Sticky embed \`${name}\` deleted.`, ephemeral: true });
     }
+    
+    // LIST
+    if (sub === 'list') {
+      const stickies = await StickyEmbed.find({ guildId: interaction.guildId });
+
+    if (!stickies.length) {
+    return interaction.reply({ content: 'No sticky embeds found in this server.', ephemeral: true });
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('Sticky Embeds')
+    .setDescription(
+      stickies
+        .map(sticky =>
+          `• **${sticky.name}**${sticky.embed.description ? ` — ${sticky.embed.description.substring(0, 60)}${sticky.embed.description.length > 60 ? '...' : ''}` : ''} *(Assigned to ${sticky.stickies?.length || 0} channel${(sticky.stickies?.length || 0) !== 1 ? 's' : ''})*`
+        )
+        .join('\n')
+     )
+     .setColor('#5865F2');
+
+     return interaction.reply({ embeds: [embed], ephemeral: true });
+   }
   }
 };
