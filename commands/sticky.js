@@ -35,12 +35,46 @@ module.exports = {
             .setDescription('Delete a sticky embed')
             .addStringOption(opt => opt.setName('name').setDescription('Name of the sticky embed').setRequired(true))
         )
-    ),
+    )
+	.addSubcommand(sub =>
+  sub.setName('remove')
+    .setDescription('Remove a sticky embed from a channel')
+    .addStringOption(opt => opt.setName('name').setDescription('Name of the sticky embed').setRequired(true))
+    .addChannelOption(opt => opt.setName('channel').setDescription('Channel to remove from').setRequired(true).addChannelTypes(ChannelType.GuildText))
+),
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup();
     const sub = interaction.options.getSubcommand();
 
     if (group !== 'embed') return;
+
+	// REMOVE STICKY
+	if (sub === 'remove') {
+  const name = interaction.options.getString('name');
+  const channel = interaction.options.getChannel('channel');
+
+  const sticky = await StickyEmbed.findOne({ guildId: interaction.guildId, name });
+  if (!sticky) return interaction.reply({ content: 'Sticky embed not found.', ephemeral: true });
+
+  // Find the sticky info for this channel
+  const stickyInfo = sticky.stickies.find(s => s.channelId === channel.id);
+
+  // Delete the last sticky message in the channel, if present
+  if (stickyInfo && stickyInfo.messageId) {
+    try {
+      const msg = await channel.messages.fetch(stickyInfo.messageId);
+      if (msg) await msg.delete();
+    } catch (e) {
+      // Ignore if already deleted or missing permissions
+    }
+  }
+
+  // Remove the sticky from this channel
+  sticky.stickies = sticky.stickies.filter(s => s.channelId !== channel.id);
+  await sticky.save();
+
+  return interaction.reply({ content: `Sticky embed \`${name}\` removed from ${channel}.`, ephemeral: true });
+}
 
     // CREATE
     if (sub === 'create') {
