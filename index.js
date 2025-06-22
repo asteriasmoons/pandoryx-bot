@@ -110,7 +110,7 @@ client.once('ready', async () => {
 
 // Poll GitHub every 5 minutes
   setInterval(() => checkGitHubFeeds(client), 1000 * 60 * 5);
-
+  checkGitHubFeeds(client); // runs once immediately
 });
 
 client.login(process.env.TOKEN);
