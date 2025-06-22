@@ -34,7 +34,7 @@ async function checkGitHubFeeds(client) {
           const avatar = commitData.author?.avatar_url;
 
           const embed = new EmbedBuilder()
-            .setColor(0x24292e)
+            .setColor(0x8f72da)
             .setTitle(`New Commit: ${shortSha}`)
             .setURL(commitData.html_url)
             .setDescription(commit.message || '*No commit message*')
@@ -65,7 +65,7 @@ async function checkGitHubFeeds(client) {
         if (feed.lastIssueId && issue.id <= feed.lastIssueId) break;
 
         const embed = new EmbedBuilder()
-          .setColor(0x2da44e)
+          .setColor(0x8f72da)
           .setTitle(`New Issue: #${issue.number} - ${issue.title}`)
           .setURL(issue.html_url)
           .setDescription(issue.body?.slice(0, 300) || '*No description*')
@@ -96,7 +96,7 @@ async function checkGitHubFeeds(client) {
         if (feed.lastReleaseId && release.id <= feed.lastReleaseId) break;
 
         const embed = new EmbedBuilder()
-          .setColor(0x6e40c9)
+          .setColor(0x8f72da)
           .setTitle(`New Release: ${release.name || release.tag_name}`)
           .setURL(release.html_url)
           .setDescription(release.body?.slice(0, 500) || '*No description*')

@@ -46,8 +46,8 @@ module.exports = {
       );
 
       const embed = new EmbedBuilder()
-        .setColor(0x2da44e)
-        .setTitle('✅ GitHub Feed Added')
+        .setColor(0x8f72da)
+        .setTitle('GitHub Feed Added')
         .setDescription(`Now watching [${repoUrl}](${repoUrl}) on branch \`${branch}\`.\nUpdates will be posted in <#${channel.id}>.`)
         .setFooter({ text: 'GitHub Feed Tracker' });
 
@@ -59,8 +59,8 @@ module.exports = {
       await GitHubFeed.deleteOne({ guildId, repoUrl });
 
       const embed = new EmbedBuilder()
-        .setColor(0xff5c5c)
-        .setTitle('🛑 GitHub Feed Removed')
+        .setColor(0x8f72da)
+        .setTitle('GitHub Feed Removed')
         .setDescription(`No longer watching [${repoUrl}](${repoUrl}).`)
         .setFooter({ text: 'GitHub Feed Tracker' });
 
@@ -72,8 +72,8 @@ module.exports = {
 
       if (!feeds.length) {
         const embed = new EmbedBuilder()
-          .setColor(0x999999)
-          .setTitle('📭 No Repositories Tracked')
+          .setColor(0x8f72da)
+          .setTitle('No Repositories Tracked')
           .setDescription('This server is not watching any GitHub repositories.')
           .setFooter({ text: 'GitHub Feed Tracker' });
 
@@ -81,8 +81,8 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setColor(0x7289da)
-        .setTitle('📋 Watched GitHub Repositories')
+        .setColor(0x8f72da)
+        .setTitle('Watched GitHub Repositories')
         .setDescription(
           feeds.map(f => `• [${f.repoUrl}](${f.repoUrl}) → <#${f.channelId}> (Branch: \`${f.branch}\`)`).join('\n')
         )
