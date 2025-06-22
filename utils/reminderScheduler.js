@@ -1,7 +1,7 @@
 // utils/reminderScheduler.js
 const Reminder = require('../models/Reminder');
 const { EmbedBuilder } = require('discord.js');
-const chrono = require('chrono-node'); // <-- NEW: Use chrono-node!
+const { DateTime } = require('luxon');
 
 // Helper to parse intervals like "1h", "2d", "15m"
 function parseInterval(str) {
@@ -16,7 +16,7 @@ function parseInterval(str) {
 
 module.exports = function startReminderScheduler(client) {
   setInterval(async () => {
-    const now = new Date();
+    const nowUTC = DateTime.utc();
     let reminders;
     try {
       reminders = await Reminder.find({});
@@ -32,62 +32,68 @@ module.exports = function startReminderScheduler(client) {
       const channel = guild.channels.cache.get(reminder.channelId);
       if (!channel || !channel.isTextBased()) continue;
 
-      // 2. Check if this reminder is due to send
+      // 2. Parse timezone (default to America/Chicago)
+      const tz = reminder.timezone || 'America/Chicago';
+
+      // 3. Parse interval
       let intervalMs = parseInterval(reminder.interval);
-      if (!intervalMs) continue; // skip if invalid interval
+      if (!intervalMs) continue;
 
-      // --- CHRONO: Robustly parse the startDate in case it's a string or Date
-      let startDate;
+      // 4. Parse startDate in UTC, but calculations in user’s timezone
+      let startDateUtc;
       if (reminder.startDate instanceof Date) {
-        startDate = reminder.startDate;
+        startDateUtc = DateTime.fromJSDate(reminder.startDate, { zone: 'utc' });
       } else if (typeof reminder.startDate === 'string') {
-        startDate = chrono.parseDate(reminder.startDate);
+        // stored as ISO string
+        startDateUtc = DateTime.fromISO(reminder.startDate, { zone: 'utc' });
       } else {
-        startDate = null;
+        startDateUtc = null;
       }
-
-      // If the startDate is still invalid, skip this reminder
-      if (!startDate || isNaN(startDate.getTime())) {
+      if (!startDateUtc || !startDateUtc.isValid) {
         console.warn(`[Reminders] Invalid startDate for "${reminder.name}":`, reminder.startDate);
         continue;
       }
 
-      // Next scheduled time
-      let nextTime = startDate;
-      if (reminder.lastSent) {
-        nextTime = new Date(reminder.lastSent.getTime() + intervalMs);
+      // 5. Last sent calculation
+      let lastSentUtc = reminder.lastSent
+        ? DateTime.fromJSDate(reminder.lastSent, { zone: 'utc' })
+        : null;
+
+      // Next send time in UTC
+      let nextTimeUtc = startDateUtc;
+      if (lastSentUtc) {
+        nextTimeUtc = lastSentUtc.plus({ milliseconds: intervalMs });
       }
 
-      // If a specific day of week is set, check if today matches
+      // 6. Calculate "now" in the reminder’s timezone for day-of-week logic
+      const nowInTz = nowUTC.setZone(tz);
+
+      // 7. If a specific day of week is set, check if today matches in the user’s timezone
       if (reminder.dayOfWeek) {
-        // E.g., "Monday", "Tuesday", etc.
-        const today = now.toLocaleString('en-US', { weekday: 'long' });
+        const today = nowInTz.toFormat('cccc'); // e.g. "Sunday"
         if (today.toLowerCase() !== reminder.dayOfWeek.toLowerCase()) continue;
       }
 
-      // Due?
-      if (now >= nextTime) {
-        // 3. Build embed
+      // 8. Send if due
+      if (nowUTC >= nextTimeUtc) {
         const embed = new EmbedBuilder()
           .setTitle(reminder.embedTitle || 'Reminder!')
           .setDescription(reminder.embedDescription || '')
           .setColor(reminder.embedColor || '#8757f2');
 
-        // 4. Send
         try {
           await channel.send({
             content: reminder.ping || '',
             embeds: [embed]
           });
-          console.log(`[Reminders] Sent reminder "${reminder.name}" in #${channel.name}`);
+          console.log(`[Reminders] Sent reminder "${reminder.name}" in #${channel.name} (TZ: ${tz})`);
         } catch (sendErr) {
           console.error(`[Reminders] Could not send reminder "${reminder.name}":`, sendErr);
           continue;
         }
 
-        // 5. Update lastSent in DB
         try {
-          reminder.lastSent = now;
+          reminder.lastSent = nowUTC.toJSDate(); // Save as UTC!
           await reminder.save();
           console.log(`[Reminders] Updated lastSent for "${reminder.name}"`);
         } catch (saveErr) {

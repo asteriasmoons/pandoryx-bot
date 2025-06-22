@@ -8,14 +8,25 @@ const {
   ButtonStyle
 } = require('discord.js');
 const Reminder = require('../models/Reminder');
-const chrono = require('chrono-node'); // <-- You only need this here
+const chrono = require('chrono-node');
 
+const { DateTime } = require('luxon'); // <-- You need to `npm install luxon`
 const setupCache = new Map();
+
+// --- Add timezone names for user guidance ---
+const tzExamples = [
+  'America/Chicago',
+  'America/New_York',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Europe/London',
+  'Asia/Tokyo'
+];
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('reminder')
-    .setDescription('Create, list, edit, or delete reminders for your server')
+    .setDescription('Create, list, edit, delete reminders or set server timezone')
     .addSubcommand(sub =>
       sub.setName('create')
         .setDescription('Create a new reminder')
@@ -43,6 +54,14 @@ module.exports = {
           opt.setName('name')
             .setDescription('The name of the reminder to delete')
             .setRequired(true))
+    )
+    .addSubcommand(sub =>
+      sub.setName('timezone')
+        .setDescription('Set the default timezone for reminders in this server')
+        .addStringOption(opt =>
+          opt.setName('timezone')
+            .setDescription('IANA timezone (e.g., America/Chicago, Europe/London)')
+            .setRequired(true))
     ),
 
   async execute(interaction, client) {
@@ -52,15 +71,36 @@ module.exports = {
       const userId = interaction.user.id;
       const setupKey = `${guildId}_${userId}`;
 
+      // TIMEZONE
+      if (sub === 'timezone') {
+        const tz = interaction.options.getString('timezone');
+        // Validate using luxon:
+        if (!DateTime.local().setZone(tz).isValid) {
+          return interaction.reply({
+            content: `❌ Invalid timezone "${tz}". Try one of: ${tzExamples.join(', ')}`,
+            ephemeral: true
+          });
+        }
+        // Update all reminders in this guild to use this timezone (or you can do per-reminder)
+        const result = await Reminder.updateMany({ guildId }, { timezone: tz });
+        return interaction.reply({
+          content: `✅ Default timezone for **${result.modifiedCount}** reminders set to **${tz}**.\n\nFor new reminders, this timezone will be shown in preview and used for start dates.\n\nExamples: ${tzExamples.join(', ')}`,
+          ephemeral: true
+        });
+      }
+
       // CREATE
       if (sub === 'create') {
         const name = interaction.options.getString('name').trim();
         console.log(`[Reminders] /reminder create invoked for ${name} by ${userId} in ${guildId}`);
         const exists = await Reminder.findOne({ guildId, name });
         if (exists) {
-          console.log(`[Reminders] Reminder named ${name} already exists.`);
           return interaction.reply({ content: `❌ A reminder named **${name}** already exists.`, ephemeral: true });
         }
+
+        // Default to Chicago time unless user sets otherwise
+        const existing = await Reminder.findOne({ guildId });
+        const defaultTimezone = existing?.timezone || 'America/Chicago';
 
         const setupObj = {
           guildId,
@@ -73,7 +113,8 @@ module.exports = {
           dayOfWeek: null,
           embedTitle: 'Reminder!',
           embedDescription: '',
-          embedColor: '#8757f2'
+          embedColor: '#8757f2',
+          timezone: defaultTimezone
         };
         setupCache.set(setupKey, setupObj);
         return interaction.reply(getSetupUI(setupObj));
@@ -81,7 +122,6 @@ module.exports = {
 
       // LIST
       if (sub === 'list') {
-        console.log(`[Reminders] /reminder list by ${userId} in ${guildId}`);
         const reminders = await Reminder.find({ guildId });
         if (!reminders.length)
           return interaction.reply({ content: 'No reminders set in this server.', ephemeral: true });
@@ -90,7 +130,7 @@ module.exports = {
           .setColor(0x8757f2)
           .setDescription(
             reminders.map(r =>
-              `• **${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> (Title: ${r.embedTitle})`
+              `• **${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> (Title: ${r.embedTitle}) | TZ: \`${r.timezone}\``
             ).join('\n')
           );
         return interaction.reply({ embeds: [embed], ephemeral: true });
@@ -99,7 +139,6 @@ module.exports = {
       // EDIT
       if (sub === 'edit') {
         const name = interaction.options.getString('name').trim();
-        console.log(`[Reminders] /reminder edit for ${name} by ${userId} in ${guildId}`);
         const reminder = await Reminder.findOne({ guildId, name });
         if (!reminder)
           return interaction.reply({ content: `❌ No reminder named **${name}** was found.`, ephemeral: true });
@@ -112,13 +151,11 @@ module.exports = {
       // DELETE
       if (sub === 'delete') {
         const name = interaction.options.getString('name').trim();
-        console.log(`[Reminders] /reminder delete for ${name} by ${userId} in ${guildId}`);
         const reminder = await Reminder.findOne({ guildId, name });
         if (!reminder)
           return interaction.reply({ content: `❌ No reminder named **${name}** was found.`, ephemeral: true });
 
         await reminder.deleteOne();
-        console.log(`[Reminders] Reminder ${name} deleted.`);
         return interaction.reply({ content: `✅ Reminder **${name}** deleted.`, ephemeral: true });
       }
     } catch (err) {
@@ -137,7 +174,6 @@ module.exports = {
       const setupObj = setupCache.get(setupKey);
 
       if (!setupObj) {
-        console.warn('[Reminders] No setupObj found in cache.');
         return interaction.reply({ content: 'Setup session expired or not found. Please run `/reminder create` again.', ephemeral: true });
       }
 
@@ -148,10 +184,11 @@ module.exports = {
 
         if (interaction.customId === 'reminder-settings') {
           if (selected === 'interval') prompt = 'How often should this reminder repeat? (e.g. `1h`, `1d`, `12h`)';
-          if (selected === 'startDate') prompt = 'When should the first reminder start? (Try things like `tomorrow 9am`, `in 3 hours`, `2025-07-01 10:00`, or `now`)';
+          if (selected === 'startDate') prompt = `When should the first reminder start? (Try things like \`tomorrow 9am\`, \`in 3 hours\`, \`2025-07-01 10:00\`, or \`now\`)\nTimezone: \`${setupObj.timezone}\``;
           if (selected === 'ping') prompt = 'Who should be pinged? (mention a user, a role, or type text. Leave blank for none)';
           if (selected === 'channel') prompt = 'Which channel should the reminder be sent to? (mention the channel or paste its ID)';
           if (selected === 'dayOfWeek') prompt = 'On which day of the week should this reminder be sent? (e.g. `Monday`. Leave blank for every day)';
+          if (selected === 'timezone') prompt = `What timezone should this reminder use? (IANA string, e.g., America/Chicago)\nExamples: ${tzExamples.join(', ')}`;
         }
         if (interaction.customId === 'reminder-message') {
           if (selected === 'embedTitle') prompt = 'What should the embed title be?';
@@ -170,58 +207,50 @@ module.exports = {
 
         collector.on('collect', async m => {
           const value = m.content.trim();
-          console.log(`[Reminders] Collected "${value}" for "${selected}"`);
           if (interaction.customId === 'reminder-settings') {
-            if (selected === 'interval') {
-              setupObj.interval = value;
-              console.log(`[Reminders] Interval set to: ${value}`);
-            }
+            if (selected === 'interval') setupObj.interval = value;
             if (selected === 'startDate') {
               let parsed;
               if (value.toLowerCase() === 'now') {
-                parsed = new Date();
+                parsed = DateTime.now().setZone(setupObj.timezone).toJSDate();
               } else {
-                parsed = chrono.parseDate(value);
-              }
-              if (!parsed || isNaN(parsed.getTime())) {
-                console.warn(`[Reminders] chrono-node failed to parse: "${value}"`);
-                await interaction.followUp({
-                  content: '⚠️ Sorry, I couldn\'t understand that date/time! Try things like `tomorrow 5pm`, `in 2 hours`, `2025-07-01 10:00`, or `now`.',
-                  ephemeral: true
-                });
-                return;
+                // Parse using chrono, then set to the desired timezone and convert to UTC for DB
+                let tempParsed = chrono.parseDate(value, new Date(), { timezone: setupObj.timezone });
+                if (!tempParsed) {
+                  await interaction.followUp({
+                    content: `⚠️ Sorry, I couldn't understand that date/time! Example: \`tomorrow 5pm\`, \`in 2 hours\`, \`2025-07-01 10:00\` (Timezone: \`${setupObj.timezone}\`)`,
+                    ephemeral: true
+                  });
+                  return;
+                }
+                // Convert to UTC for DB
+                parsed = DateTime.fromJSDate(tempParsed).setZone(setupObj.timezone).toUTC().toJSDate();
               }
               setupObj.startDate = parsed;
-              console.log(`[Reminders] Start date set to: ${parsed.toISOString()}`);
+              console.log(`[Reminders] Start date set to: ${parsed.toISOString()} (TZ: ${setupObj.timezone})`);
             }
-            if (selected === 'ping') {
-              setupObj.ping = value;
-              console.log(`[Reminders] Ping set to: ${value}`);
-            }
+            if (selected === 'ping') setupObj.ping = value;
             if (selected === 'channel') {
               let channelId = value;
               const channelMention = value.match(/^<#(\d+)>$/);
               if (channelMention) channelId = channelMention[1];
               setupObj.channelId = channelId;
-              console.log(`[Reminders] Channel set to: ${channelId}`);
             }
-            if (selected === 'dayOfWeek') {
-              setupObj.dayOfWeek = value || null;
-              console.log(`[Reminders] Day of week set to: ${setupObj.dayOfWeek}`);
+            if (selected === 'dayOfWeek') setupObj.dayOfWeek = value || null;
+            if (selected === 'timezone') {
+              if (!DateTime.local().setZone(value).isValid) {
+                await interaction.followUp({
+                  content: `❌ Invalid timezone "${value}". Try one of: ${tzExamples.join(', ')}`,
+                  ephemeral: true
+                });
+                return;
+              }
+              setupObj.timezone = value;
             }
           } else if (interaction.customId === 'reminder-message') {
-            if (selected === 'embedTitle') {
-              setupObj.embedTitle = value;
-              console.log(`[Reminders] Embed title set to: ${value}`);
-            }
-            if (selected === 'embedDescription') {
-              setupObj.embedDescription = value;
-              console.log(`[Reminders] Embed description set to: ${value}`);
-            }
-            if (selected === 'embedColor') {
-              setupObj.embedColor = value.startsWith('#') ? value : `#${value}`;
-              console.log(`[Reminders] Embed color set to: ${setupObj.embedColor}`);
-            }
+            if (selected === 'embedTitle') setupObj.embedTitle = value;
+            if (selected === 'embedDescription') setupObj.embedDescription = value;
+            if (selected === 'embedColor') setupObj.embedColor = value.startsWith('#') ? value : `#${value}`;
           }
 
           setupCache.set(setupKey, setupObj);
@@ -230,10 +259,7 @@ module.exports = {
         });
 
         collector.on('end', (collected, reason) => {
-          if (reason === 'time') {
-            console.warn('[Reminders] Collector timed out.');
-            interaction.followUp({ content: '⏰ Setup timed out. Please use `/reminder edit` to continue.', ephemeral: true });
-          }
+          if (reason === 'time') interaction.followUp({ content: '⏰ Setup timed out. Please use `/reminder edit` to continue.', ephemeral: true });
         });
 
         return;
@@ -244,15 +270,12 @@ module.exports = {
         if (!['reminder-save', 'reminder-cancel'].includes(interaction.customId)) return;
 
         if (interaction.customId === 'reminder-cancel') {
-          console.log(`[Reminders] Setup canceled by ${userId} in ${guildId}`);
           setupCache.delete(setupKey);
           return interaction.reply({ content: '❌ Reminder setup canceled.', ephemeral: true });
         }
 
         if (interaction.customId === 'reminder-save') {
-          console.log(`[Reminders] Attempting to save reminder for ${userId} in ${guildId}:`, setupObj);
           if (!setupObj.interval || !setupObj.startDate || !setupObj.channelId) {
-            console.warn('[Reminders] Save failed, missing required fields:', setupObj);
             return interaction.reply({
               content: 'Please set the interval, start date, and channel before saving!',
               ephemeral: true
@@ -266,7 +289,6 @@ module.exports = {
             { upsert: true, new: true }
           );
           setupCache.delete(setupKey);
-          console.log(`[Reminders] Reminder saved: ${setupObj.name}`);
           return interaction.reply({ content: `✅ Reminder **${setupObj.name}** saved!`, ephemeral: true });
         }
       }
@@ -290,7 +312,8 @@ function getSetupUI(data) {
       { name: 'Start Date', value: data.startDate ? `<t:${Math.floor((new Date(data.startDate).getTime())/1000)}:f>` : '`Not set`', inline: true },
       { name: 'Ping', value: data.ping || '`None`', inline: true },
       { name: 'Channel', value: data.channelId ? `<#${data.channelId}>` : '`Not set`', inline: true },
-      { name: 'Day of Week', value: data.dayOfWeek || '`Every day`', inline: true }
+      { name: 'Day of Week', value: data.dayOfWeek || '`Every day`', inline: true },
+      { name: 'Timezone', value: data.timezone || '`America/Chicago`', inline: true }
     );
 
   const settingsMenu = new StringSelectMenuBuilder()
@@ -301,7 +324,8 @@ function getSetupUI(data) {
       { label: 'Start Date', value: 'startDate', description: 'When to start the reminder?' },
       { label: 'Ping (Role/User)', value: 'ping', description: 'Who should be pinged?' },
       { label: 'Channel', value: 'channel', description: 'Which channel to send to?' },
-      { label: 'Send on Specific Day', value: 'dayOfWeek', description: 'Which day? (optional)' }
+      { label: 'Send on Specific Day', value: 'dayOfWeek', description: 'Which day? (optional)' },
+      { label: 'Timezone', value: 'timezone', description: 'What timezone to use?' }
     ]);
   const messageMenu = new StringSelectMenuBuilder()
     .setCustomId('reminder-message')

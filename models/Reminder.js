@@ -16,6 +16,8 @@ const ReminderSchema = new mongoose.Schema({
   embedDescription: { type: String, default: '' },
   embedColor: { type: String, default: '#8757f2' },
 
+  timezone: { type: String, default: 'America/Chicago' }, // <--- NEW FIELD!
+
   // For scheduling
   lastSent: { type: Date, default: null }
 }, { timestamps: true });
