@@ -154,7 +154,42 @@ module.exports = {
     )
     .setFooter({ text: 'Pandoryx Help Pages' });
 
-	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds];
+    const levelCmds = new EmbedBuilder()
+    .setTitle('**Level Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</level profile:1386077143494168586>', value: 'Shows your leveling profile in a nice embed message' },
+        { name: '</level role-add:1386077143494168586>', value: 'Add a role for a specific level to be awarded to users of that level' },
+        { name: '</level role-remove:1386077143494168586>', value: 'Remove a role for a specific level' },
+        { name: '</level role-list:1386077143494168586>', value: 'Lists all the roles youve assigned to a level' },
+        { name: '</level reset:1386077143494168586>', value: 'Reset someones level with this command (for admins only)' },
+        { name: '</level set-announcement:1386077143494168586>', value: 'Admins can set announcement message for levels using text and placeholders' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const lvlconfigCmds = new EmbedBuilder()
+    .setTitle('**Level Config Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</levelconfig set-thresholds:1386077143494168587>', value: 'Set the amount of messages a user must send to reach each level' },
+        { name: '</levelconfig view-thresholds:1386077143494168587>', value: 'View the thresholds set for your server' },
+        { name: '</levelconfig reset-thresholds:1386077143494168587>', value: 'Reset amount of messages/thresholds back to default' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const reminderCmds = new EmbedBuilder()
+    .setTitle('**Reminder Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</reminder create:1386367362734882937>', value: 'Create an interval reminder, this commands sends a ui to configure' },
+        { name: '</reminder list:1386367362734882937>', value: 'List all active reminders in your server by name' },
+        { name: '</reminder edit:1386367362734882937>', value: 'Edit an existing reminder by name with the same ui as the create command' },
+        { name: '</reminder delete:1386367362734882937>', value: 'Delete a reminder by name from your server' },
+        { name: '</reminder timezone:1386367362734882937>', value: 'Set your timezone for reminders in your server.' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds];
 
     // Embed navigation logic
     let currentPage = 0;
