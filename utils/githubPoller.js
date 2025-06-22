@@ -35,7 +35,7 @@ async function checkGitHubFeeds(client) {
 
           const embed = new EmbedBuilder()
             .setColor(0x8f72da)
-            .setTitle(`New Commit: ${shortSha}`)
+            .setTitle(`📥 New Commit: ${shortSha}`)
             .setURL(commitData.html_url)
             .setDescription(commit.message || '*No commit message*')
             .addFields(
