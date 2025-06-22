@@ -19,6 +19,7 @@ const { buildEmbed } = require('../utils/embedEditorUI');
 const { sendGreetingEmbedEditor } = require('../events/ticketPanelUi');
 const LogConfig = require('../models/LogConfig');
 const RolePanel = require('../models/RolePanel');
+const reminderCommand = require('../commands/reminder.js');
 
 async function generateTranscript(channel) {
   let messages = [];
@@ -1345,6 +1346,14 @@ if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepan
     content: `✅ Your roles have been updated!`,
     ephemeral: true
   });
+}
+
+// === REMINDER HANDLER (buttons and select menus) ===
+if (
+  (interaction.isStringSelectMenu() || interaction.isButton()) &&
+  interaction.customId.startsWith('reminder-')
+) {
+  return reminderCommand.handleComponent(interaction, client);
 }
 
     // === SLASH COMMAND HANDLER ===

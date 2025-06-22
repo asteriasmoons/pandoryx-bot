@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, ActivityType, Partials } = require('discord.js');
 
+const startReminderScheduler = require('./utils/reminderScheduler.js');
+
 // Import your ReactionRoleMessage model (adjust the path as needed)
 const ReactionRoleMessage = require('./models/ReactionRoleMessage'); // <-- FIX THIS PATH IF NEEDED
 
@@ -81,6 +83,7 @@ client.on('messageReactionAdd', (reaction, user) => {
 
 
 client.once('ready', async () => { 
+    startReminderScheduler(client);
     // Load all reaction role messages into cache
     const allPanels = await ReactionRoleMessage.find({});
     for (const panel of allPanels) {
