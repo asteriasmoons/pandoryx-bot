@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, ActivityType, Partials } = require('discord.js');
 
+const { checkGitHubFeeds } = require('./utils/githubPoller');
+
 const startReminderScheduler = require('./utils/reminderScheduler.js');
 
 // Import your ReactionRoleMessage model (adjust the path as needed)
@@ -84,6 +86,7 @@ client.on('messageReactionAdd', (reaction, user) => {
 
 client.once('ready', async () => { 
     startReminderScheduler(client);
+    setInterval(() => checkGitHubFeeds(client), 1000 * 60 * 5);
     // Load all reaction role messages into cache
     const allPanels = await ReactionRoleMessage.find({});
     for (const panel of allPanels) {
