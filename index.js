@@ -86,7 +86,6 @@ client.on('messageReactionAdd', (reaction, user) => {
 
 client.once('ready', async () => { 
     startReminderScheduler(client);
-    setInterval(() => checkGitHubFeeds(client), 1000 * 60 * 5);
     // Load all reaction role messages into cache
     const allPanels = await ReactionRoleMessage.find({});
     for (const panel of allPanels) {
@@ -108,6 +107,10 @@ client.once('ready', async () => {
     });
 
     console.log(`Bot ${client.user.tag} is now ready!`);
+
+// Poll GitHub every 5 minutes
+  setInterval(() => checkGitHubFeeds(client), 1000 * 60 * 5);
+
 });
 
 client.login(process.env.TOKEN);

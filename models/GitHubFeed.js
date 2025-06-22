@@ -1,12 +1,11 @@
-// models/GitHubFeed.js
 const mongoose = require('mongoose');
 
 const GitHubFeedSchema = new mongoose.Schema({
-  guildId: String,
-  repoUrl: String,
+  guildId: { type: String, required: true },
+  repoUrl: { type: String, required: true },
   branch: { type: String, default: 'main' },
-  channelId: String,
-  lastCommitSha: String,
+  channelId: { type: String, required: true },
+  lastCommitSha: { type: String },
 });
 
 module.exports = mongoose.model('GitHubFeed', GitHubFeedSchema);
