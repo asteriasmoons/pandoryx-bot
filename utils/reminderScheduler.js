@@ -1,7 +1,7 @@
-// scheduler/reminderScheduler.js
-
+// utils/reminderScheduler.js
 const Reminder = require('../models/Reminder');
 const { EmbedBuilder } = require('discord.js');
+const chrono = require('chrono-node'); // <-- NEW: Use chrono-node!
 
 // Helper to parse intervals like "1h", "2d", "15m"
 function parseInterval(str) {
@@ -36,8 +36,24 @@ module.exports = function startReminderScheduler(client) {
       let intervalMs = parseInterval(reminder.interval);
       if (!intervalMs) continue; // skip if invalid interval
 
+      // --- CHRONO: Robustly parse the startDate in case it's a string or Date
+      let startDate;
+      if (reminder.startDate instanceof Date) {
+        startDate = reminder.startDate;
+      } else if (typeof reminder.startDate === 'string') {
+        startDate = chrono.parseDate(reminder.startDate);
+      } else {
+        startDate = null;
+      }
+
+      // If the startDate is still invalid, skip this reminder
+      if (!startDate || isNaN(startDate.getTime())) {
+        console.warn(`[Reminders] Invalid startDate for "${reminder.name}":`, reminder.startDate);
+        continue;
+      }
+
       // Next scheduled time
-      let nextTime = reminder.startDate;
+      let nextTime = startDate;
       if (reminder.lastSent) {
         nextTime = new Date(reminder.lastSent.getTime() + intervalMs);
       }
@@ -63,6 +79,7 @@ module.exports = function startReminderScheduler(client) {
             content: reminder.ping || '',
             embeds: [embed]
           });
+          console.log(`[Reminders] Sent reminder "${reminder.name}" in #${channel.name}`);
         } catch (sendErr) {
           console.error(`[Reminders] Could not send reminder "${reminder.name}":`, sendErr);
           continue;
@@ -72,6 +89,7 @@ module.exports = function startReminderScheduler(client) {
         try {
           reminder.lastSent = now;
           await reminder.save();
+          console.log(`[Reminders] Updated lastSent for "${reminder.name}"`);
         } catch (saveErr) {
           console.error(`[Reminders] Could not update lastSent for "${reminder.name}":`, saveErr);
         }
