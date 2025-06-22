@@ -130,7 +130,7 @@ module.exports = {
           .setColor(0x8757f2)
           .setDescription(
             reminders.map(r =>
-              `• **${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> (Title: ${r.embedTitle}) | TZ: \`${r.timezone}\``
+              `- **${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> (Title: ${r.embedTitle}) | TZ: \`${r.timezone}\``
             ).join('\n')
           );
         return interaction.reply({ embeds: [embed], ephemeral: true });
