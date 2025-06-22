@@ -8,6 +8,7 @@ const {
   ButtonStyle
 } = require('discord.js');
 const Reminder = require('../models/Reminder');
+const chrono = require('chrono-node'); // <-- ADD THIS LINE
 
 const setupCache = new Map();
 
@@ -44,7 +45,6 @@ module.exports = {
             .setRequired(true))
     ),
 
-  // The main handler for /reminder and all logic
   async execute(interaction, client) {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
@@ -116,7 +116,6 @@ module.exports = {
     }
   },
 
-  // Component (select menu/button) logic: import and call from interactionCreate.js using this exported handler!
   async handleComponent(interaction, client) {
     const guildId = interaction.guildId || interaction.guild.id;
     const userId = interaction.user.id;
@@ -133,7 +132,7 @@ module.exports = {
 
       if (interaction.customId === 'reminder-settings') {
         if (selected === 'interval') prompt = 'How often should this reminder repeat? (e.g. `1h`, `1d`, `12h`)';
-        if (selected === 'startDate') prompt = 'When should the first reminder start? (ISO, e.g. `2025-07-01T10:00` or `now`)';
+        if (selected === 'startDate') prompt = 'When should the first reminder start? (Try things like `tomorrow 9am`, `in 3 hours`, `2025-07-01 10:00`, or `now`)';
         if (selected === 'ping') prompt = 'Who should be pinged? (mention a user, a role, or type text. Leave blank for none)';
         if (selected === 'channel') prompt = 'Which channel should the reminder be sent to? (mention the channel or paste its ID)';
         if (selected === 'dayOfWeek') prompt = 'On which day of the week should this reminder be sent? (e.g. `Monday`. Leave blank for every day)';
@@ -157,7 +156,22 @@ module.exports = {
         const value = m.content.trim();
         if (interaction.customId === 'reminder-settings') {
           if (selected === 'interval') setupObj.interval = value;
-          if (selected === 'startDate') setupObj.startDate = value.toLowerCase() === 'now' ? new Date() : new Date(value);
+          if (selected === 'startDate') {
+            let parsed;
+            if (value.toLowerCase() === 'now') {
+              parsed = new Date();
+            } else {
+              parsed = chrono.parseDate(value);
+            }
+            if (!parsed || isNaN(parsed.getTime())) {
+              await interaction.followUp({
+                content: '⚠️ Sorry, I couldn\'t understand that date/time! Try things like `tomorrow 5pm`, `in 2 hours`, `2025-07-01 10:00`, or `now`.',
+                ephemeral: true
+              });
+              return;
+            }
+            setupObj.startDate = parsed;
+          }
           if (selected === 'ping') setupObj.ping = value;
           if (selected === 'channel') {
             let channelId = value;
