@@ -3,7 +3,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 const GuildConfig = require('../models/GuildConfig');
 const UserLevel = require('../models/UserLevel');
 
-const DEFAULT_THRESHOLDS = [0, 5, 10, 25, 50, 100, 200];
+const DEFAULT_THRESHOLDS = [0, 5, 10, 20, 40, 60, 80, 120, 180, 220];
 const DEFAULT_LVLUP = '<@{userId}> leveled up to **Level {level}**! 🎉';
 
 module.exports = {

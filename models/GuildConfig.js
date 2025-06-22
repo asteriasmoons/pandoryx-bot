@@ -5,7 +5,7 @@ const GuildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   levelThresholds: {
     type: [Number],
-    default: [0, 5, 10, 25, 50, 100, 200]
+    default: [0, 5, 10, 20, 40, 60, 80, 120, 180, 220]
   },
   levelRoles: {
     type: [
