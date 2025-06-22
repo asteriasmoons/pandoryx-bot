@@ -189,7 +189,17 @@ module.exports = {
     )
     .setFooter({ text: 'Pandoryx Help Pages' });
 
-	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds];
+    const githubCmds = new EmbedBuilder()
+    .setTitle('**Github Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</github watch:1386449523617824818>', value: 'Enter a github account and repo URL to watch and get updates in your specified channel on' },
+        { name: '</github unwatch:1386449523617824818>', value: 'Stop getting posts from a github repo' },
+        { name: '</github list:1386449523617824818>', value: 'Get a list of repos you are watching in the server' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds];
 
     // Embed navigation logic
     let currentPage = 0;
