@@ -15,6 +15,7 @@ function parseInterval(str) {
 }
 
 module.exports = function startReminderScheduler(client) {
+	console.log('[Reminders] Scheduler is running!');
   setInterval(async () => {
     const nowUTC = DateTime.utc();
     let reminders;
