@@ -3,7 +3,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const GuildConfig = require('../models/GuildConfig');
 
-const DEFAULT_THRESHOLDS = [0, 5, 10, 25, 50, 100, 200];
+const DEFAULT_THRESHOLDS = [0, 5, 10, 20, 40, 60, 80, 120, 180, 220];
 
 module.exports = {
   data: new SlashCommandBuilder()
