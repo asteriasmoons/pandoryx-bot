@@ -133,7 +133,7 @@ module.exports = {
               `- **${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> (Title: ${r.embedTitle}) | TZ: \`${r.timezone}\``
             ).join('\n')
           );
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], ephemeral: false });
       }
 
       // EDIT
@@ -141,7 +141,7 @@ module.exports = {
         const name = interaction.options.getString('name').trim();
         const reminder = await Reminder.findOne({ guildId, name });
         if (!reminder)
-          return interaction.reply({ content: `❌ No reminder named **${name}** was found.`, ephemeral: true });
+          return interaction.reply({ content: `No reminder named **${name}** was found.`, ephemeral: true });
 
         const setupObj = { ...reminder.toObject() };
         setupCache.set(setupKey, setupObj);
