@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder } = require('discord.js');
 const GitHubFeed = require('../models/GitHubFeed');
 
 module.exports = {
@@ -45,24 +45,50 @@ module.exports = {
         { upsert: true }
       );
 
-      await interaction.reply(`📡 Now watching \`${repoUrl}\` on branch \`${branch}\` in <#${channel.id}>`);
+      const embed = new EmbedBuilder()
+        .setColor(0x2da44e)
+        .setTitle('✅ GitHub Feed Added')
+        .setDescription(`Now watching [${repoUrl}](${repoUrl}) on branch \`${branch}\`.\nUpdates will be posted in <#${channel.id}>.`)
+        .setFooter({ text: 'GitHub Feed Tracker' });
+
+      await interaction.reply({ embeds: [embed] });
     }
 
-    if (sub === 'unwatch') {
+    else if (sub === 'unwatch') {
       const repoUrl = interaction.options.getString('repo');
       await GitHubFeed.deleteOne({ guildId, repoUrl });
-      await interaction.reply(`🛑 Stopped watching \`${repoUrl}\``);
+
+      const embed = new EmbedBuilder()
+        .setColor(0xff5c5c)
+        .setTitle('🛑 GitHub Feed Removed')
+        .setDescription(`No longer watching [${repoUrl}](${repoUrl}).`)
+        .setFooter({ text: 'GitHub Feed Tracker' });
+
+      await interaction.reply({ embeds: [embed] });
     }
 
-    if (sub === 'list') {
+    else if (sub === 'list') {
       const feeds = await GitHubFeed.find({ guildId });
-      if (!feeds.length) return interaction.reply(`📭 No repositories are being watched in this server.`);
 
-      const list = feeds.map(f =>
-        `• [${f.repoUrl}](${f.repoUrl}) → <#${f.channelId}> (Branch: \`${f.branch}\`)`
-      ).join('\n');
+      if (!feeds.length) {
+        const embed = new EmbedBuilder()
+          .setColor(0x999999)
+          .setTitle('📭 No Repositories Tracked')
+          .setDescription('This server is not watching any GitHub repositories.')
+          .setFooter({ text: 'GitHub Feed Tracker' });
 
-      await interaction.reply({ content: `📋 Watching the following GitHub repos:\n${list}`, ephemeral: true });
+        return interaction.reply({ embeds: [embed], ephemeral: true });
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(0x7289da)
+        .setTitle('📋 Watched GitHub Repositories')
+        .setDescription(
+          feeds.map(f => `• [${f.repoUrl}](${f.repoUrl}) → <#${f.channelId}> (Branch: \`${f.branch}\`)`).join('\n')
+        )
+        .setFooter({ text: 'GitHub Feed Tracker' });
+
+      await interaction.reply({ embeds: [embed], ephemeral: true });
     }
   }
 };
