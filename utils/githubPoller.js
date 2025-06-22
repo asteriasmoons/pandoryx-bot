@@ -48,6 +48,7 @@ async function checkGitHubFeeds(client) {
 
           if (avatar) embed.setThumbnail(avatar);
           await channel.send({ embeds: [embed] });
+          await channel.send(commitData.html_url);
         }
 
         feed.lastCommitSha = commits[0].sha;
@@ -79,6 +80,7 @@ async function checkGitHubFeeds(client) {
         if (issue.user?.avatar_url) embed.setThumbnail(issue.user.avatar_url);
 
         await channel.send({ embeds: [embed] });
+        await channel.send(issue.html_url);
 
         if (!feed.lastIssueId || issue.id > feed.lastIssueId) {
           feed.lastIssueId = issue.id;
@@ -108,6 +110,7 @@ async function checkGitHubFeeds(client) {
           .setFooter({ text: `${owner}/${repo} • Release` });
 
         await channel.send({ embeds: [embed] });
+        await channel.send(release.html_url);
 
         if (!feed.lastReleaseId || release.id > feed.lastReleaseId) {
           feed.lastReleaseId = release.id;
