@@ -1,45 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const WelcomeConfig = require('../models/WelcomeConfig');
 const Embed = require('../models/Embed');
-const { EmbedBuilder } = require('discord.js');
-
-function buildEmbedFromDoc(embedDoc, member, guild) {
-  const replacements = {
-    '{user}': `<@${member.id}>`,
-    '{username}': member.user.username,
-    '{userTag}': member.user.tag,
-    '{userId}': member.id,
-    '{userAvatar}': member.user.displayAvatarURL({ dynamic: true }),
-    '{server}': guild.name,
-  };
-  const replace = (text) => {
-    if (!text) return undefined;
-    return Object.entries(replacements).reduce(
-      (acc, [key, value]) => acc.replaceAll(key, value), text
-    );
-  };
-
-  const embed = new EmbedBuilder();
-  if (embedDoc.title) embed.setTitle(replace(embedDoc.title));
-  if (embedDoc.description) embed.setDescription(replace(embedDoc.description));
-  if (embedDoc.color) embed.setColor(embedDoc.color);
-  if (embedDoc.author && (embedDoc.author.name || embedDoc.author.icon_url)) {
-    embed.setAuthor({
-      name: replace(embedDoc.author.name),
-      iconURL: replace(embedDoc.author.icon_url),
-    });
-  }
-  if (embedDoc.footer && (embedDoc.footer.text || embedDoc.footer.icon_url)) {
-    embed.setFooter({
-      text: replace(embedDoc.footer.text),
-      iconURL: replace(embedDoc.footer.icon_url),
-    });
-  }
-  if (embedDoc.footer && embedDoc.footer.timestamp) embed.setTimestamp();
-  if (embedDoc.thumbnail) embed.setThumbnail(replace(embedDoc.thumbnail));
-  if (embedDoc.image) embed.setImage(replace(embedDoc.image));
-  return embed;
-}
+const buildEmbedFromDoc = require('../utils/buildEmbedFromDoc'); // Adjust path if needed
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -49,10 +11,10 @@ module.exports = {
       sub
         .setName('set')
         .setDescription('Set up or change the leave message')
-        // Required options first!
+        // Required first!
         .addStringOption(opt =>
           opt.setName('type')
-            .setDescription('Choose "embed" to use a saved embed, or "text" for a text message')
+            .setDescription('Choose "embed" (with optional text), or "text" only')
             .setRequired(true)
             .addChoices(
               { name: 'Embed', value: 'embed' },
@@ -64,14 +26,15 @@ module.exports = {
             .setDescription('Channel to send leave messages in')
             .setRequired(true)
         )
-        // Optional options after required
+        // Optional: embed name if type=embed
         .addStringOption(opt =>
           opt.setName('embedname')
-            .setDescription('Name of the saved embed to use (if type is embed)')
+            .setDescription('Name of the saved embed (required if type is embed)')
         )
+        // Optional: text for ping/instructions (optional with embed, required if type=text)
         .addStringOption(opt =>
           opt.setName('text')
-            .setDescription('Text message (if type is text). Use {user}, {username}, {server}')
+            .setDescription('Text to send with the embed (optional) or alone if type=text')
         )
     )
     .addSubcommand(sub =>
@@ -84,12 +47,14 @@ module.exports = {
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 
+    // --- SET SUBCOMMAND ---
     if (sub === 'set') {
       const type = interaction.options.getString('type');
       const embedName = interaction.options.getString('embedname');
       const text = interaction.options.getString('text');
       const channel = interaction.options.getChannel('channel');
 
+      // Validation
       if (type === 'embed' && !embedName) {
         return interaction.reply({ content: 'You must provide an embed name for type "embed".', ephemeral: true });
       }
@@ -102,7 +67,7 @@ module.exports = {
         {
           leaveType: type,
           leaveEmbedName: type === 'embed' ? embedName : undefined,
-          leaveText: type === 'text' ? text : undefined,
+          leaveText: text || undefined, // Allow text for both types!
           leaveChannel: channel.id,
         },
         { upsert: true }
@@ -111,6 +76,7 @@ module.exports = {
       return interaction.reply({ content: '✅ Leave message updated!', ephemeral: true });
     }
 
+    // --- TEST SUBCOMMAND ---
     if (sub === 'test') {
       const config = await WelcomeConfig.findOne({ guildId: interaction.guild.id });
       if (!config || (!config.leaveEmbedName && !config.leaveText)) {
@@ -123,7 +89,19 @@ module.exports = {
           return interaction.reply({ content: 'Configured embed not found in database.', ephemeral: true });
         }
         const embed = buildEmbedFromDoc(embedDoc, interaction.member, interaction.guild);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+
+        if (config.leaveText) {
+          let message = config.leaveText
+            .replaceAll('{user}', `<@${interaction.user.id}>`)
+            .replaceAll('{username}', interaction.user.username)
+            .replaceAll('{server}', interaction.guild.name);
+          return interaction.reply({ content: message, embeds: [embed], ephemeral: true });
+          // Or, as separate messages:
+          // await interaction.reply({ content: message, ephemeral: true });
+          // await interaction.followUp({ embeds: [embed], ephemeral: true });
+        } else {
+          return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
       } else if (config.leaveType === 'text' && config.leaveText) {
         let message = config.leaveText
           .replaceAll('{user}', `<@${interaction.user.id}>`)
