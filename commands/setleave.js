@@ -66,8 +66,8 @@ module.exports = {
         )
         // Optional options after required
         .addStringOption(opt =>
-          opt.setName('embedid')
-            .setDescription('MongoDB Embed ID to use (if type is embed)')
+          opt.setName('embedname')
+            .setDescription('Name of the saved embed to use (if type is embed)')
         )
         .addStringOption(opt =>
           opt.setName('text')
@@ -86,12 +86,12 @@ module.exports = {
 
     if (sub === 'set') {
       const type = interaction.options.getString('type');
-      const embedId = interaction.options.getString('embedid');
+      const embedName = interaction.options.getString('embedname');
       const text = interaction.options.getString('text');
       const channel = interaction.options.getChannel('channel');
 
-      if (type === 'embed' && !embedId) {
-        return interaction.reply({ content: 'You must provide an Embed ID for type "embed".', ephemeral: true });
+      if (type === 'embed' && !embedName) {
+        return interaction.reply({ content: 'You must provide an embed name for type "embed".', ephemeral: true });
       }
       if (type === 'text' && !text) {
         return interaction.reply({ content: 'You must provide a text message for type "text".', ephemeral: true });
@@ -101,7 +101,7 @@ module.exports = {
         { guildId: interaction.guild.id },
         {
           leaveType: type,
-          leaveEmbedId: type === 'embed' ? embedId : undefined,
+          leaveEmbedName: type === 'embed' ? embedName : undefined,
           leaveText: type === 'text' ? text : undefined,
           leaveChannel: channel.id,
         },
@@ -113,12 +113,12 @@ module.exports = {
 
     if (sub === 'test') {
       const config = await WelcomeConfig.findOne({ guildId: interaction.guild.id });
-      if (!config || (!config.leaveEmbedId && !config.leaveText)) {
+      if (!config || (!config.leaveEmbedName && !config.leaveText)) {
         return interaction.reply({ content: 'No leave message is set yet!', ephemeral: true });
       }
 
-      if (config.leaveType === 'embed' && config.leaveEmbedId) {
-        const embedDoc = await Embed.findById(config.leaveEmbedId);
+      if (config.leaveType === 'embed' && config.leaveEmbedName) {
+        const embedDoc = await Embed.findOne({ guildId: interaction.guild.id, name: config.leaveEmbedName });
         if (!embedDoc) {
           return interaction.reply({ content: 'Configured embed not found in database.', ephemeral: true });
         }

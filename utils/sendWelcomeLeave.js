@@ -3,7 +3,7 @@ const WelcomeConfig = require('../models/WelcomeConfig');
 const Embed = require('../models/Embed');
 const { EmbedBuilder } = require('discord.js');
 
-// Helper to build EmbedBuilder (from earlier)
+// Helper to build EmbedBuilder from embedDoc
 function buildEmbedFromDoc(embedDoc, member, guild) {
   const replacements = {
     '{user}': `<@${member.id}>`,
@@ -54,8 +54,9 @@ async function sendWelcomeOrLeave(member, type) {
   const channel = member.guild.channels.cache.get(channelId);
   if (!channel) return;
 
-  if (config[`${type}Type`] === 'embed' && config[`${type}EmbedId`]) {
-    const embedDoc = await Embed.findById(config[`${type}EmbedId`]);
+  // Use embedName, NOT embedId!
+  if (config[`${type}Type`] === 'embed' && config[`${type}EmbedName`]) {
+    const embedDoc = await Embed.findOne({ guildId: member.guild.id, name: config[`${type}EmbedName`] });
     if (!embedDoc) return;
     const embed = buildEmbedFromDoc(embedDoc, member, member.guild);
     channel.send({ embeds: [embed] });

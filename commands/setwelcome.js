@@ -49,7 +49,7 @@ module.exports = {
       sub
         .setName('set')
         .setDescription('Set up or change the welcome message')
-        // All required options FIRST!
+        // Required options first!
         .addStringOption(opt =>
           opt.setName('type')
             .setDescription('Choose "embed" to use a saved embed, or "text" for a text message')
@@ -64,10 +64,10 @@ module.exports = {
             .setDescription('Channel to send welcome messages in')
             .setRequired(true)
         )
-        // Now optional options
+        // Optional options after required
         .addStringOption(opt =>
-          opt.setName('embedid')
-            .setDescription('MongoDB Embed ID to use (if type is embed)')
+          opt.setName('embedname')
+            .setDescription('Name of the saved embed to use (if type is embed)')
         )
         .addStringOption(opt =>
           opt.setName('text')
@@ -86,12 +86,12 @@ module.exports = {
 
     if (sub === 'set') {
       const type = interaction.options.getString('type');
-      const embedId = interaction.options.getString('embedid');
+      const embedName = interaction.options.getString('embedname');
       const text = interaction.options.getString('text');
       const channel = interaction.options.getChannel('channel');
 
-      if (type === 'embed' && !embedId) {
-        return interaction.reply({ content: 'You must provide an Embed ID for type "embed".', ephemeral: true });
+      if (type === 'embed' && !embedName) {
+        return interaction.reply({ content: 'You must provide an embed name for type "embed".', ephemeral: true });
       }
       if (type === 'text' && !text) {
         return interaction.reply({ content: 'You must provide a text message for type "text".', ephemeral: true });
@@ -101,7 +101,7 @@ module.exports = {
         { guildId: interaction.guild.id },
         {
           welcomeType: type,
-          welcomeEmbedId: type === 'embed' ? embedId : undefined,
+          welcomeEmbedName: type === 'embed' ? embedName : undefined,
           welcomeText: type === 'text' ? text : undefined,
           welcomeChannel: channel.id,
         },
@@ -113,12 +113,12 @@ module.exports = {
 
     if (sub === 'test') {
       const config = await WelcomeConfig.findOne({ guildId: interaction.guild.id });
-      if (!config || (!config.welcomeEmbedId && !config.welcomeText)) {
+      if (!config || (!config.welcomeEmbedName && !config.welcomeText)) {
         return interaction.reply({ content: 'No welcome message is set yet!', ephemeral: true });
       }
 
-      if (config.welcomeType === 'embed' && config.welcomeEmbedId) {
-        const embedDoc = await Embed.findById(config.welcomeEmbedId);
+      if (config.welcomeType === 'embed' && config.welcomeEmbedName) {
+        const embedDoc = await Embed.findOne({ guildId: interaction.guild.id, name: config.welcomeEmbedName });
         if (!embedDoc) {
           return interaction.reply({ content: 'Configured embed not found in database.', ephemeral: true });
         }
