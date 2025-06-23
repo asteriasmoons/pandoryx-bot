@@ -1,7 +1,7 @@
 const Autorole = require('../models/Autorole');
 const UserKick = require('../models/UserKick');
 const modLogger = require('../modLogger');
-const sendWelcomeOrLeave = require('../utils/sendWelcomeOrLeave'); // NEW!
+const sendWelcomeOrLeave = require('../utils/sendWelcomeLeave'); // NEW!
 
 module.exports = (client) => {
   // Member JOIN
