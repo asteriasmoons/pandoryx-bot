@@ -3,12 +3,10 @@ const TwitterFeed = require('../models/TwitterFeed');
 const axios = require('axios');
 
 function getUsernameFromUrl(url) {
-  try {
-    const match = url.match(/twitter\.com\/([A-Za-z0-9_]+)/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
+  // Supports x.com and twitter.com, any protocol, with or without trailing slash
+  url = url.replace(/^https?:\/\//, '');
+  const match = url.match(/(?:x\.com|twitter\.com)\/([A-Za-z0-9_]{1,15})(?:[/?].*)?$/i);
+  return match ? match[1] : null;
 }
 
 async function getUserIdFromUsername(username) {
