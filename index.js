@@ -6,7 +6,6 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, ActivityType, Partials } = require('discord.js');
 
 const { checkGitHubFeeds } = require('./utils/githubPoller');
-const { checkTwitterFeeds } = require('./utils/twitterPoller');
 
 const startReminderScheduler = require('./utils/reminderScheduler.js');
 
