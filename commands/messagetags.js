@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('Messagetags')
+    .setName('messagetags')
     .setDescription('Show the available placeholders/tags for welcome and leave messages'),
   async execute(interaction) {
     await interaction.reply({
