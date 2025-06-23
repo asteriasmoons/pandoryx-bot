@@ -49,6 +49,7 @@ module.exports = {
       sub
         .setName('set')
         .setDescription('Set up or change the leave message')
+        // Required options first!
         .addStringOption(opt =>
           opt.setName('type')
             .setDescription('Choose "embed" to use a saved embed, or "text" for a text message')
@@ -58,6 +59,12 @@ module.exports = {
               { name: 'Text', value: 'text' }
             )
         )
+        .addChannelOption(opt =>
+          opt.setName('channel')
+            .setDescription('Channel to send leave messages in')
+            .setRequired(true)
+        )
+        // Optional options after required
         .addStringOption(opt =>
           opt.setName('embedid')
             .setDescription('MongoDB Embed ID to use (if type is embed)')
@@ -65,11 +72,6 @@ module.exports = {
         .addStringOption(opt =>
           opt.setName('text')
             .setDescription('Text message (if type is text). Use {user}, {username}, {server}')
-        )
-        .addChannelOption(opt =>
-          opt.setName('channel')
-            .setDescription('Channel to send leave messages in')
-            .setRequired(true)
         )
     )
     .addSubcommand(sub =>
@@ -115,7 +117,6 @@ module.exports = {
         return interaction.reply({ content: 'No leave message is set yet!', ephemeral: true });
       }
 
-      // Fake "member" = interaction.member, "guild" = interaction.guild
       if (config.leaveType === 'embed' && config.leaveEmbedId) {
         const embedDoc = await Embed.findById(config.leaveEmbedId);
         if (!embedDoc) {

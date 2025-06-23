@@ -3,7 +3,6 @@ const WelcomeConfig = require('../models/WelcomeConfig');
 const Embed = require('../models/Embed');
 const { EmbedBuilder } = require('discord.js');
 
-// Helper: same as before
 function buildEmbedFromDoc(embedDoc, member, guild) {
   const replacements = {
     '{user}': `<@${member.id}>`,
@@ -50,6 +49,7 @@ module.exports = {
       sub
         .setName('set')
         .setDescription('Set up or change the welcome message')
+        // All required options FIRST!
         .addStringOption(opt =>
           opt.setName('type')
             .setDescription('Choose "embed" to use a saved embed, or "text" for a text message')
@@ -59,6 +59,12 @@ module.exports = {
               { name: 'Text', value: 'text' }
             )
         )
+        .addChannelOption(opt =>
+          opt.setName('channel')
+            .setDescription('Channel to send welcome messages in')
+            .setRequired(true)
+        )
+        // Now optional options
         .addStringOption(opt =>
           opt.setName('embedid')
             .setDescription('MongoDB Embed ID to use (if type is embed)')
@@ -66,11 +72,6 @@ module.exports = {
         .addStringOption(opt =>
           opt.setName('text')
             .setDescription('Text message (if type is text). Use {user}, {username}, {server}')
-        )
-        .addChannelOption(opt =>
-          opt.setName('channel')
-            .setDescription('Channel to send welcome messages in')
-            .setRequired(true)
         )
     )
     .addSubcommand(sub =>
@@ -116,7 +117,6 @@ module.exports = {
         return interaction.reply({ content: 'No welcome message is set yet!', ephemeral: true });
       }
 
-      // Fake "member" = interaction.member, "guild" = interaction.guild
       if (config.welcomeType === 'embed' && config.welcomeEmbedId) {
         const embedDoc = await Embed.findById(config.welcomeEmbedId);
         if (!embedDoc) {
