@@ -7,7 +7,7 @@ async function checkTwitterFeeds(client) {
 
   for (const feed of feeds) {
     try {
-      const apiUrl = `https://api.twitter.com/2/users/${feed.twitterUserId}/tweets?max_results=5&tweet.fields=created_at,author_id`;
+      const apiUrl = `https://api.twitter.com/2/users/${feed.twitterUserId}/tweets?max_results=5&tweet.fields=created_at,author_id&exclude=replies,retweets`;
       const res = await axios.get(apiUrl, {
         headers: { Authorization: `Bearer ${process.env.TWITTER_BEARER}` }
       });
