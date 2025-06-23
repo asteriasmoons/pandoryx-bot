@@ -112,7 +112,6 @@ client.once('ready', async () => {
   // Poll GitHub every 30 seconds
   setInterval(() => checkGitHubFeeds(client), 1000 * 30);
   // checkGitHubFeeds(client); // runs once immediately
-  setInterval(() => checkTwitterFeeds(client), 1000 * 5); // every 30 sec for testing
 });
 
 client.login(process.env.TOKEN);
