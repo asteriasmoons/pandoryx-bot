@@ -14,7 +14,8 @@ async function checkGitHubFeeds(client) {
       // === COMMITS ===
       const commitsRes = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/commits?sha=${feed.branch}`,
-        { headers: { 'User-Agent': 'Pandoryx-Bot' } }
+        { headers: { 'User-Agent': 'Pandoryx-Bot', 'Authorization': `token ${process.env.
+GITHUB_TOKEN}` } }
       );
 
       const commits = commitsRes.data;
@@ -56,8 +57,12 @@ async function checkGitHubFeeds(client) {
 
       // === ISSUES ===
       const issuesRes = await axios.get(
-        `https://api.github.com/repos/${owner}/${repo}/issues?state=open&sort=created&direction=desc`,
-        { headers: { 'User-Agent': 'Pandoryx-Bot' } }
+        `https://api.github.com/repos/${owner}/${repo}/issues?state=open&sort=created&
+direction=desc`,
+        { headers: { 
+          'User-Agent': 'Pandoryx-Bot',
+          'Authorization': `token ${process.env.GITHUB_TOKEN}`
+        } }
       );
 
       const issues = issuesRes.data;
@@ -90,7 +95,7 @@ async function checkGitHubFeeds(client) {
       // === RELEASES ===
       const releasesRes = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/releases`,
-        { headers: { 'User-Agent': 'Pandoryx-Bot' } }
+        { headers: { 'User-Agent': 'Pandoryx-Bot', 'Authorization': `token ${process.env.GITHUB_TOKEN}` } }
       );
 
       const releases = releasesRes.data;
@@ -119,7 +124,8 @@ async function checkGitHubFeeds(client) {
 
       await feed.save();
     } catch (err) {
-      console.error(`Error checking ${feed.repoUrl}:`, err.response?.data?.message || err.message);
+      console.error(`Error checking ${feed.repoUrl}:`, err.response?.data?.message || err.
+message);
     }
   }
 }
