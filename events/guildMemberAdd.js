@@ -1,8 +1,10 @@
 const Autorole = require('../models/Autorole');
 const UserKick = require('../models/UserKick');
 const modLogger = require('../modLogger');
+const sendWelcomeOrLeave = require('../utils/sendWelcomeOrLeave'); // NEW!
 
 module.exports = (client) => {
+  // Member JOIN
   client.on('guildMemberAdd', async (member) => {
     console.log(`${member.user.tag} joined the server!`);
 
@@ -26,16 +28,31 @@ module.exports = (client) => {
     try {
       const kickRecord = await UserKick.findOne({ userId: member.id, guildId: member.guild.id });
       if (kickRecord) {
-        // Delete the kick record(s)
         await UserKick.deleteOne({ userId: member.id, guildId: member.guild.id });
-
-        // Log or notify staff here
         await modLogger.logKickCaseDeleted(member.guild, member.id);
-
         console.log(`Kick cases for user ${member.id} in guild ${member.guild.id} were deleted on rejoin.`);
       }
     } catch (err) {
       console.error(`Error handling kick record: ${err}`);
+    }
+
+    // Welcome message (NEW!)
+    try {
+      await sendWelcomeOrLeave(member, 'welcome');
+    } catch (err) {
+      console.error(`Error sending welcome message: ${err}`);
+    }
+  });
+
+  // Member LEAVE
+  client.on('guildMemberRemove', async (member) => {
+    console.log(`${member.user.tag} left the server!`);
+
+    // Leave message (NEW!)
+    try {
+      await sendWelcomeOrLeave(member, 'leave');
+    } catch (err) {
+      console.error(`Error sending leave message: ${err}`);
     }
   });
 };
