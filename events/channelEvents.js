@@ -20,13 +20,32 @@ function getChannelTypeName(type) {
 module.exports = (client) => {
   // Channel Created (includes threads)
   client.on(Events.ChannelCreate, async (channel) => {
-    if (!channel.guild) return;
+    console.log(`[DEBUG] ChannelCreate event fired! Name: ${channel.name}, ID: ${channel.id}, Type: ${getChannelTypeName(channel.type)}`);
+
+    if (!channel.guild) {
+      console.log('[DEBUG] ChannelCreate: No guild found, skipping.');
+      return;
+    }
 
     const config = await LogConfig.findOne({ guildId: channel.guild.id });
-    if (!config?.logs?.channelCreate) return;
+    if (!config) {
+      console.log(`[DEBUG] ChannelCreate: No LogConfig for guild ${channel.guild.id}`);
+      return;
+    }
+    if (!config.logs?.channelCreate) {
+      console.log(`[DEBUG] ChannelCreate: Logging not enabled for channelCreate in guild ${channel.guild.id}`);
+      return;
+    }
 
     const logChannel = channel.guild.channels.cache.get(config.logs.channelCreate);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    if (!logChannel) {
+      console.log(`[DEBUG] ChannelCreate: Log channel not found or not cached (${config.logs.channelCreate})`);
+      return;
+    }
+    if (!logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) {
+      console.log('[DEBUG] ChannelCreate: Bot cannot send messages in log channel.');
+      return;
+    }
 
     // Thread details
     let embed = new EmbedBuilder()
@@ -34,6 +53,7 @@ module.exports = (client) => {
       .setTimestamp();
 
     if (channel.isThread && channel.isThread()) {
+      console.log('[DEBUG] ChannelCreate: This is a thread!');
       embed
         .setTitle('Thread Created')
         .addFields(
@@ -56,24 +76,46 @@ module.exports = (client) => {
         );
     }
 
-    logChannel.send({ embeds: [embed] }).catch(() => {});
+    logChannel.send({ embeds: [embed] })
+      .then(() => console.log('[DEBUG] ChannelCreate: Log sent successfully!'))
+      .catch(err => console.error('[ERROR] ChannelCreate: Failed to send log:', err));
   });
 
   // Channel Deleted (includes threads)
   client.on(Events.ChannelDelete, async (channel) => {
-    if (!channel.guild) return;
+    console.log(`[DEBUG] ChannelDelete event fired! Name: ${channel.name}, ID: ${channel.id}, Type: ${getChannelTypeName(channel.type)}`);
+
+    if (!channel.guild) {
+      console.log('[DEBUG] ChannelDelete: No guild found, skipping.');
+      return;
+    }
 
     const config = await LogConfig.findOne({ guildId: channel.guild.id });
-    if (!config?.logs?.channelDelete) return;
+    if (!config) {
+      console.log(`[DEBUG] ChannelDelete: No LogConfig for guild ${channel.guild.id}`);
+      return;
+    }
+    if (!config.logs?.channelDelete) {
+      console.log(`[DEBUG] ChannelDelete: Logging not enabled for channelDelete in guild ${channel.guild.id}`);
+      return;
+    }
 
     const logChannel = channel.guild.channels.cache.get(config.logs.channelDelete);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    if (!logChannel) {
+      console.log(`[DEBUG] ChannelDelete: Log channel not found or not cached (${config.logs.channelDelete})`);
+      return;
+    }
+    if (!logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) {
+      console.log('[DEBUG] ChannelDelete: Bot cannot send messages in log channel.');
+      return;
+    }
 
     let embed = new EmbedBuilder()
       .setColor(0x5d47a0)
       .setTimestamp();
 
     if (channel.isThread && channel.isThread()) {
+      console.log('[DEBUG] ChannelDelete: This is a thread!');
       embed
         .setTitle('Thread Deleted')
         .addFields(
@@ -92,19 +134,41 @@ module.exports = (client) => {
         );
     }
 
-    logChannel.send({ embeds: [embed] }).catch(() => {});
+    logChannel.send({ embeds: [embed] })
+      .then(() => console.log('[DEBUG] ChannelDelete: Log sent successfully!'))
+      .catch(err => console.error('[ERROR] ChannelDelete: Failed to send log:', err));
   });
 
   // Channel Updated (supports permission changes & name/topic/etc)
   client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
-    if (!newChannel.guild) return;
+    console.log(`[DEBUG] ChannelUpdate event fired! Old Name: ${oldChannel.name}, New Name: ${newChannel.name}, ID: ${newChannel.id}, Type: ${getChannelTypeName(newChannel.type)}`);
+
+    if (!newChannel.guild) {
+      console.log('[DEBUG] ChannelUpdate: No guild on newChannel');
+      return;
+    }
 
     const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
-    if (!config?.logs?.channelUpdate) return;
+    if (!config) {
+      console.log('[DEBUG] ChannelUpdate: No LogConfig for guild:', newChannel.guild.id);
+      return;
+    }
+    if (!config.logs?.channelUpdate) {
+      console.log('[DEBUG] ChannelUpdate: No channelUpdate log config for guild:', newChannel.guild.id);
+      return;
+    }
 
     const logChannel = newChannel.guild.channels.cache.get(config.logs.channelUpdate);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    if (!logChannel) {
+      console.log('[DEBUG] ChannelUpdate: Log channel not found or not cached:', config.logs.channelUpdate);
+      return;
+    }
+    if (!logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) {
+      console.log('[DEBUG] ChannelUpdate: No send permissions for log channel');
+      return;
+    }
 
+    // Only log if relevant changes
     const changes = [];
 
     if (oldChannel.name !== newChannel.name) {
@@ -113,17 +177,14 @@ module.exports = (client) => {
         value: `**Before:** ${oldChannel.name}\n**After:** ${newChannel.name}`,
       });
     }
-
     if ('topic' in oldChannel && oldChannel.topic !== newChannel.topic) {
       changes.push({
         name: 'Topic Changed',
         value: `**Before:** ${oldChannel.topic || 'None'}\n**After:** ${newChannel.topic || 'None'}`,
       });
     }
-
     // Permissions Changed
     if (oldChannel.permissionOverwrites && newChannel.permissionOverwrites) {
-      // This can be expensive! We'll just show "permissions changed" if bitfields differ
       if (JSON.stringify(oldChannel.permissionOverwrites.cache.map(po => [po.id, po.allow.bitfield, po.deny.bitfield]))
         !== JSON.stringify(newChannel.permissionOverwrites.cache.map(po => [po.id, po.allow.bitfield, po.deny.bitfield]))) {
         changes.push({
@@ -133,7 +194,10 @@ module.exports = (client) => {
       }
     }
 
-    if (changes.length === 0) return;
+    if (changes.length === 0) {
+      console.log('[DEBUG] ChannelUpdate: No relevant changes to log.');
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setColor(0x5d47a0)
@@ -142,6 +206,8 @@ module.exports = (client) => {
       .addFields({ name: 'Channel', value: `<#${newChannel.id}>`, inline: false })
       .setTimestamp();
 
-    logChannel.send({ embeds: [embed] }).catch(() => {});
+    logChannel.send({ embeds: [embed] })
+      .then(() => console.log('[DEBUG] ChannelUpdate: Log sent successfully!'))
+      .catch(err => console.error('[ERROR] ChannelUpdate: Failed to send log:', err));
   });
 };
