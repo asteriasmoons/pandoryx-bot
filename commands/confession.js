@@ -52,7 +52,7 @@ module.exports = {
 
       if (!title.includes('{id}')) {
         const errorEmbed = new EmbedBuilder()
-          .setTitle('⚠️ Missing `{id}` Placeholder')
+          .setTitle('Missing `{id}` Placeholder')
           .setDescription('Your title must include `{id}` so the confession number can be inserted.\n\nExample: `Confession #{id}`')
           .setColor(0x9e3cff);
 
