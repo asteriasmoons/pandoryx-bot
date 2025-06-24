@@ -45,9 +45,24 @@ module.exports = {
     function isStaff(interaction) {
   return interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild);
 }
-
     // === BUTTON HANDLERS ===
     if (interaction.isButton()) {
+      // === CONFESSION BUTTON ===
+      if (interaction.customId === 'confession_open_modal') {
+      const modal = new ModalBuilder()
+      .setCustomId('confession_submit')
+      .setTitle('Submit a Confession')
+      .addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('confessionText')
+          .setLabel('What would you like to share?')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+      )
+    );
+  return interaction.showModal(modal);
+}
         // --- ROLEPANEL BUTTON HANDLER ---
   if (interaction.customId.startsWith('rolepanel_button_')) {
     // customId format: rolepanel_button_<panelId>_<roleId>
@@ -825,6 +840,54 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
         return interaction.reply({ content: `Panel name updated to \`${newName}\`.`, ephemeral: true });
       }
     }
+
+    // === CONFESSION MODAL SUBMIT ===
+    if (interaction.customId === 'confession_submit') {
+  const Confession = require('../models/Confession');
+  const ConfessionConfig = require('../models/ConfessionConfig');
+
+  const confessionText = interaction.fields.getTextInputValue('confessionText');
+  const guildId = interaction.guildId;
+
+  const config = await ConfessionConfig.findOne({ guildId });
+  if (!config) {
+    return interaction.reply({
+      content: '❌ Confession system is not set up yet. Ask an admin to run `/confessions setup`.',
+      ephemeral: true
+    });
+  }
+
+  const last = await Confession.findOne({ guildId }).sort({ confessionId: -1 });
+  const newId = last ? last.confessionId + 1 : 1;
+
+  await Confession.create({
+    guildId,
+    confessionId: newId,
+    content: confessionText
+  });
+
+  const embedTitle = config.embedTitle.replace('{id}', newId);
+  const embed = new EmbedBuilder()
+    .setTitle(embedTitle)
+    .setDescription(confessionText)
+    .setColor(0x2f3136)
+    .setTimestamp();
+
+  const targetChannel = await interaction.client.channels.fetch(config.confessionChannelId).catch(() => null);
+  if (!targetChannel) {
+    return interaction.reply({
+      content: '❌ Could not find the configured confession channel. Ask an admin to re-run `/confessions setup`.',
+      ephemeral: true
+    });
+  }
+
+  await targetChannel.send({ embeds: [embed] });
+
+  return interaction.reply({
+    content: '✅ Your anonymous confession has been submitted!',
+    ephemeral: true
+  });
+}
 
     // === TICKET: Modal Submit (Create Ticket Channel) ===
 if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal_submit:')) {
