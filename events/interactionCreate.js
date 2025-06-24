@@ -851,10 +851,12 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
 
   const config = await ConfessionConfig.findOne({ guildId });
   if (!config) {
-    return interaction.reply({
-      content: '❌ Confession system is not set up yet. Ask an admin to run `/confessions setup`.',
-      ephemeral: true
-    });
+    const failEmbed = new EmbedBuilder()
+      .setColor(0xff5555)
+      .setTitle('⚠️ Confession System Not Set Up')
+      .setDescription('Please ask an admin to run `/confessions setup` first.');
+
+    return interaction.reply({ embeds: [failEmbed], ephemeral: true });
   }
 
   const last = await Confession.findOne({ guildId }).sort({ confessionId: -1 });
@@ -875,18 +877,31 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
 
   const targetChannel = await interaction.client.channels.fetch(config.confessionChannelId).catch(() => null);
   if (!targetChannel) {
-    return interaction.reply({
-      content: '❌ Could not find the configured confession channel. Ask an admin to re-run `/confessions setup`.',
-      ephemeral: true
-    });
+    const errorEmbed = new EmbedBuilder()
+      .setColor(0xffaa00)
+      .setTitle('❌ Confession Channel Missing')
+      .setDescription('Could not find the configured confession channel. Ask an admin to re-run `/confessions setup`.');
+
+    return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
   }
 
-  await targetChannel.send({ embeds: [embed] });
+  const message = await targetChannel.send({ embeds: [embed] });
 
-  return interaction.reply({
-    content: '✅ Your anonymous confession has been submitted!',
-    ephemeral: true
-  });
+  try {
+    await message.startThread({
+      name: `Confession #${newId}`,
+      autoArchiveDuration: 1440 // 24 hours
+    });
+  } catch (err) {
+    console.error('❌ Failed to create confession thread:', err);
+  }
+
+  const successEmbed = new EmbedBuilder()
+    .setColor(0x57f287)
+    .setTitle('✅ Confession Sent')
+    .setDescription('Your anonymous confession has been submitted successfully.');
+
+  return interaction.reply({ embeds: [successEmbed], ephemeral: true });
 }
 
     // === TICKET: Modal Submit (Create Ticket Channel) ===
