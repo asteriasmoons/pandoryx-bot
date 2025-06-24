@@ -48,13 +48,15 @@ module.exports = {
     if (sub === 'setup') {
       const channel = interaction.options.getChannel('channel');
       const rawTitle = interaction.options.getString('title');
-      const title = rawTitle || '📢 Confession #{id}';
+      const title = rawTitle || 'Confession #{id}';
 
       if (!title.includes('{id}')) {
-        return interaction.reply({
-          content: '⚠️ Your title must include `{id}` so the confession number can be inserted.',
-          ephemeral: true
-        });
+        const errorEmbed = new EmbedBuilder()
+          .setTitle('⚠️ Missing `{id}` Placeholder')
+          .setDescription('Your title must include `{id}` so the confession number can be inserted.\n\nExample: `Confession #{id}`')
+          .setColor(0x9e3cff);
+
+        return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
       }
 
       await ConfessionConfig.findOneAndUpdate(
@@ -67,10 +69,15 @@ module.exports = {
         { upsert: true, new: true }
       );
 
-      return interaction.reply({
-        content: `✅ Confession system configured!\nChannel: <#${channel.id}>\nTitle: **${title}**`,
-        ephemeral: true
-      });
+      const successEmbed = new EmbedBuilder()
+        .setTitle('Confession System Configured')
+        .addFields(
+          { name: 'Channel', value: `<#${channel.id}>`, inline: true },
+          { name: 'Embed Title', value: title, inline: true }
+        )
+        .setColor(0x9e3cff);
+
+      return interaction.reply({ embeds: [successEmbed], ephemeral: true });
     }
 
     // /confessions send
@@ -80,7 +87,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('Anonymous Confessions')
         .setDescription('Click the button below to send a completely anonymous confession.\nYour identity will **not** be saved or shown.')
-        .setColor(0x5865f2);
+        .setColor(0x9e3cff);
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -91,10 +98,12 @@ module.exports = {
 
       await panelChannel.send({ embeds: [embed], components: [row] });
 
-      return interaction.reply({
-        content: `✅ Confession panel sent to <#${panelChannel.id}>.`,
-        ephemeral: true
-      });
+      const confirmEmbed = new EmbedBuilder()
+        .setTitle('Confession Panel Sent')
+        .setDescription(`The confession submission panel was sent to <#${panelChannel.id}>.`)
+        .setColor(0x9e3cff);
+
+      return interaction.reply({ embeds: [confirmEmbed], ephemeral: true });
     }
   }
 };
