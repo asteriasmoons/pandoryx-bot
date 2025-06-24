@@ -4,6 +4,7 @@ const LogConfig = require('../models/LogConfig'); // adjust path if needed
 module.exports = (client) => {
   // Member joins
   client.on(Events.GuildMemberAdd, async (member) => {
+    const joinedDiscord = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`;
     const config = await LogConfig.findOne({ guildId: member.guild.id });
     if (!config?.logs?.memberJoin) return;
     const logChannel = member.guild.channels.cache.get(config.logs.memberJoin);
@@ -11,11 +12,12 @@ module.exports = (client) => {
 
     const embed = new EmbedBuilder()
       .setColor(0x8757f2)
-      .setTitle(member.user.tag)
+      .setTitle(`${member.user.tag} joined the server`)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
       .addFields(
         { name: 'User', value: `<@${member.id}>`, inline: true },
-        { name: 'ID', value: member.id, inline: true }
+        { name: 'Account Creation', value: joinedDiscord, inline: true },
+        { name: 'ID', value: member.id, inline: false }
       )
       .setFooter({ text: member.guild.name })
       .setTimestamp();
@@ -39,11 +41,11 @@ module.exports = (client) => {
 
     const embed = new EmbedBuilder()
       .setColor(0x8757f2)
-      .setTitle(member.user.tag)
+      .setTitle(`${member.user.tag} left server`)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
       .addFields(
         { name: 'User', value: `<@${member.id}>`, inline: true },
-        { name: 'Joined Discord', value: joinedDiscord, inline: true },
+        { name: 'Account Creation', value: joinedDiscord, inline: true },
         { name: 'Roles', value: roles, inline: false }
       )
       .setFooter({ text: member.guild.name })
