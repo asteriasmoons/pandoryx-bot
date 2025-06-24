@@ -78,7 +78,7 @@ module.exports = {
       const panelChannel = interaction.options.getChannel('channel');
 
       const embed = new EmbedBuilder()
-        .setTitle('📝 Anonymous Confessions')
+        .setTitle('Anonymous Confessions')
         .setDescription('Click the button below to send a completely anonymous confession.\nYour identity will **not** be saved or shown.')
         .setColor(0x5865f2);
 
