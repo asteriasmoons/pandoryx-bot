@@ -109,7 +109,7 @@ client.once('ready', async () => {
     console.log(`Bot ${client.user.tag} is now ready!`);
 
   // Poll GitHub every 30 seconds
-  setInterval(() => checkGitHubFeeds(client), 1000 * 30);
+  setInterval(() => checkGitHubFeeds(client), 1000 * 5);
   // checkGitHubFeeds(client); // runs once immediately
 });
 
