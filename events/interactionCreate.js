@@ -852,8 +852,8 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
   const config = await ConfessionConfig.findOne({ guildId });
   if (!config) {
     const failEmbed = new EmbedBuilder()
-      .setColor(0xff5555)
-      .setTitle('⚠️ Confession System Not Set Up')
+      .setColor(0xff3c9d)
+      .setTitle('Confession System Not Set Up')
       .setDescription('Please ask an admin to run `/confessions setup` first.');
 
     return interaction.reply({ embeds: [failEmbed], ephemeral: true });
@@ -872,14 +872,14 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
   const embed = new EmbedBuilder()
     .setTitle(embedTitle)
     .setDescription(confessionText)
-    .setColor(0x2f3136)
+    .setColor(0xff3c9d)
     .setTimestamp();
 
   const targetChannel = await interaction.client.channels.fetch(config.confessionChannelId).catch(() => null);
   if (!targetChannel) {
     const errorEmbed = new EmbedBuilder()
-      .setColor(0xffaa00)
-      .setTitle('❌ Confession Channel Missing')
+      .setColor(0xff3c9d)
+      .setTitle('Confession Channel Missing')
       .setDescription('Could not find the configured confession channel. Ask an admin to re-run `/confessions setup`.');
 
     return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
@@ -893,12 +893,12 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
       autoArchiveDuration: 1440 // 24 hours
     });
   } catch (err) {
-    console.error('❌ Failed to create confession thread:', err);
+    console.error('Failed to create confession thread:', err);
   }
 
   const successEmbed = new EmbedBuilder()
-    .setColor(0x57f287)
-    .setTitle('✅ Confession Sent')
+    .setColor(0xff3c9d)
+    .setTitle('Confession Sent')
     .setDescription('Your anonymous confession has been submitted successfully.');
 
   return interaction.reply({ embeds: [successEmbed], ephemeral: true });
