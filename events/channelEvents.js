@@ -3,41 +3,63 @@ const LogConfig = require('../models/LogConfig'); // Adjust path if needed
 
 console.log('[DEBUG] channelEvents.js loaded!');
 
+function getChannelTypeName(type) {
+  switch (type) {
+    case ChannelType.GuildText: return 'Text';
+    case ChannelType.GuildVoice: return 'Voice';
+    case ChannelType.GuildCategory: return 'Category';
+    case ChannelType.GuildAnnouncement: return 'Announcement';
+    case ChannelType.AnnouncementThread: return 'Announcement Thread';
+    case ChannelType.PublicThread: return 'Public Thread';
+    case ChannelType.PrivateThread: return 'Private Thread';
+    case ChannelType.GuildForum: return 'Forum';
+    default: return `Unknown (${type})`;
+  }
+}
+
 module.exports = (client) => {
-  // Channel (or thread) Created
+  // Channel Created (includes threads)
   client.on(Events.ChannelCreate, async (channel) => {
-    console.log('[DEBUG] ChannelCreate event fired!', channel.name, channel.id);
     if (!channel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: channel.guild.id });
     if (!config?.logs?.channelCreate) return;
 
     const logChannel = channel.guild.channels.cache.get(config.logs.channelCreate);
-    if (!logChannel || !logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
-    const isThread = [
-      ChannelType.PublicThread,
-      ChannelType.PrivateThread,
-      ChannelType.AnnouncementThread
-    ].includes(channel.type);
-
-    const parent = isThread && channel.parent ? `<#${channel.parent.id}>` : null;
-
-    const embed = new EmbedBuilder()
-      .setColor(0x12cdea)
-      .setTitle(isThread ? 'Thread Created' : 'Channel Created')
-      .addFields(
-        { name: 'Name', value: `${channel.name}`, inline: true },
-        { name: 'ID', value: `${channel.id}`, inline: true },
-        { name: 'Type', value: `${ChannelType[channel.type] || channel.type}`, inline: true },
-        ...(isThread ? [{ name: 'Parent Channel', value: parent || 'Unknown', inline: true }] : [])
-      )
+    // Thread details
+    let embed = new EmbedBuilder()
+      .setColor(0x5d47a0)
       .setTimestamp();
+
+    if (channel.isThread && channel.isThread()) {
+      embed
+        .setTitle('Thread Created')
+        .addFields(
+          { name: 'Name', value: channel.name, inline: true },
+          { name: 'ID', value: channel.id, inline: true },
+          { name: 'Type', value: getChannelTypeName(channel.type), inline: true },
+          { name: 'Parent Channel', value: channel.parent ? `<#${channel.parentId}> (${channel.parentId})` : 'None', inline: false },
+          { name: 'Archived?', value: channel.archived ? 'Yes' : 'No', inline: true },
+          { name: 'Locked?', value: channel.locked ? 'Yes' : 'No', inline: true },
+          { name: 'Invitable?', value: channel.invitable ? 'Yes' : 'No', inline: true },
+          { name: 'Owner', value: channel.ownerId ? `<@${channel.ownerId}>` : 'Unknown', inline: true }
+        );
+    } else {
+      embed
+        .setTitle('Channel Created')
+        .addFields(
+          { name: 'Name', value: channel.name, inline: true },
+          { name: 'ID', value: channel.id, inline: true },
+          { name: 'Type', value: getChannelTypeName(channel.type), inline: true }
+        );
+    }
 
     logChannel.send({ embeds: [embed] }).catch(() => {});
   });
 
-  // Channel (or thread) Deleted
+  // Channel Deleted (includes threads)
   client.on(Events.ChannelDelete, async (channel) => {
     if (!channel.guild) return;
 
@@ -45,63 +67,46 @@ module.exports = (client) => {
     if (!config?.logs?.channelDelete) return;
 
     const logChannel = channel.guild.channels.cache.get(config.logs.channelDelete);
-    if (!logChannel || !logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
-    const isThread = [
-      ChannelType.PublicThread,
-      ChannelType.PrivateThread,
-      ChannelType.AnnouncementThread
-    ].includes(channel.type);
-
-    const parent = isThread && channel.parent ? `<#${channel.parent.id}>` : null;
-
-    const embed = new EmbedBuilder()
-      .setColor(0x12cdea)
-      .setTitle(isThread ? 'Thread Deleted' : 'Channel Deleted')
-      .addFields(
-        { name: 'Name', value: `${channel.name}`, inline: true },
-        { name: 'ID', value: `${channel.id}`, inline: true },
-        { name: 'Type', value: `${ChannelType[channel.type] || channel.type}`, inline: true },
-        ...(isThread ? [{ name: 'Parent Channel', value: parent || 'Unknown', inline: true }] : [])
-      )
+    let embed = new EmbedBuilder()
+      .setColor(0x5d47a0)
       .setTimestamp();
+
+    if (channel.isThread && channel.isThread()) {
+      embed
+        .setTitle('Thread Deleted')
+        .addFields(
+          { name: 'Name', value: channel.name, inline: true },
+          { name: 'ID', value: channel.id, inline: true },
+          { name: 'Type', value: getChannelTypeName(channel.type), inline: true },
+          { name: 'Parent Channel', value: channel.parentId ? `<#${channel.parentId}> (${channel.parentId})` : 'None', inline: false }
+        );
+    } else {
+      embed
+        .setTitle('Channel Deleted')
+        .addFields(
+          { name: 'Name', value: channel.name, inline: true },
+          { name: 'ID', value: channel.id, inline: true },
+          { name: 'Type', value: getChannelTypeName(channel.type), inline: true }
+        );
+    }
 
     logChannel.send({ embeds: [embed] }).catch(() => {});
   });
 
-  // Channel Updated (name, topic, permissions, etc)
+  // Channel Updated (supports permission changes & name/topic/etc)
   client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
-    console.log('[DEBUG] ChannelUpdate event fired!', oldChannel.name, '->', newChannel.name, newChannel.id);
-
-    if (!newChannel.guild) {
-      console.log('[DEBUG] No guild on newChannel');
-      return;
-    }
+    if (!newChannel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
-    if (!config) {
-      console.log('[DEBUG] No LogConfig for guild:', newChannel.guild.id);
-      return;
-    }
-    if (!config.logs?.channelUpdate) {
-      console.log('[DEBUG] No channelUpdate log config for guild:', newChannel.guild.id);
-      return;
-    }
+    if (!config?.logs?.channelUpdate) return;
 
     const logChannel = newChannel.guild.channels.cache.get(config.logs.channelUpdate);
-    if (!logChannel) {
-      console.log('[DEBUG] Log channel not found or not cached:', config.logs.channelUpdate);
-      return;
-    }
-    if (!logChannel.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) {
-      console.log('[DEBUG] No send permissions for log channel');
-      return;
-    }
+    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
-    // Only log if relevant changes
     const changes = [];
 
-    // Name change
     if (oldChannel.name !== newChannel.name) {
       changes.push({
         name: 'Name Changed',
@@ -109,7 +114,6 @@ module.exports = (client) => {
       });
     }
 
-    // Topic change (for text channels)
     if ('topic' in oldChannel && oldChannel.topic !== newChannel.topic) {
       changes.push({
         name: 'Topic Changed',
@@ -117,64 +121,27 @@ module.exports = (client) => {
       });
     }
 
-    // Permission changes (compare overwrites)
-    const oldPerms = oldChannel.permissionOverwrites.cache;
-    const newPerms = newChannel.permissionOverwrites.cache;
-
-    // Check for added/removed overwrites
-    const allIds = new Set([
-      ...oldPerms.map(po => po.id),
-      ...newPerms.map(po => po.id)
-    ]);
-    for (const id of allIds) {
-      const oldOvr = oldPerms.get(id);
-      const newOvr = newPerms.get(id);
-
-      if (!oldOvr && newOvr) {
-        // New overwrite added
+    // Permissions Changed
+    if (oldChannel.permissionOverwrites && newChannel.permissionOverwrites) {
+      // This can be expensive! We'll just show "permissions changed" if bitfields differ
+      if (JSON.stringify(oldChannel.permissionOverwrites.cache.map(po => [po.id, po.allow.bitfield, po.deny.bitfield]))
+        !== JSON.stringify(newChannel.permissionOverwrites.cache.map(po => [po.id, po.allow.bitfield, po.deny.bitfield]))) {
         changes.push({
-          name: 'Permission Overwrite Added',
-          value: `<@&${id}> (Role/User) - ${JSON.stringify(newOvr.allow.toArray())} allowed, ${JSON.stringify(newOvr.deny.toArray())} denied`
-        });
-      } else if (oldOvr && !newOvr) {
-        // Overwrite removed
-        changes.push({
-          name: 'Permission Overwrite Removed',
-          value: `<@&${id}> (Role/User)`
-        });
-      } else if (oldOvr && newOvr && (
-        oldOvr.allow.bitfield !== newOvr.allow.bitfield ||
-        oldOvr.deny.bitfield !== newOvr.deny.bitfield
-      )) {
-        // Overwrite changed
-        const beforeAllowed = oldOvr.allow.toArray().join(', ') || 'None';
-        const afterAllowed = newOvr.allow.toArray().join(', ') || 'None';
-        const beforeDenied = oldOvr.deny.toArray().join(', ') || 'None';
-        const afterDenied = newOvr.deny.toArray().join(', ') || 'None';
-        changes.push({
-          name: 'Permission Overwrite Changed',
-          value:
-            `<@&${id}> (Role/User)\n` +
-            `Allowed: **Before:** ${beforeAllowed} | **After:** ${afterAllowed}\n` +
-            `Denied: **Before:** ${beforeDenied} | **After:** ${afterDenied}`
+          name: 'Permissions Changed',
+          value: `Channel permissions were updated.`,
         });
       }
     }
 
-    if (changes.length === 0) {
-      console.log('[DEBUG] No relevant changes to log.');
-      return;
-    }
+    if (changes.length === 0) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0x12cdea)
-      .setTitle('Channel Updated')
+      .setColor(0x5d47a0)
+      .setTitle(newChannel.isThread && newChannel.isThread() ? 'Thread Updated' : 'Channel Updated')
       .addFields(...changes)
       .addFields({ name: 'Channel', value: `<#${newChannel.id}>`, inline: false })
       .setTimestamp();
 
-    logChannel.send({ embeds: [embed] })
-      .then(() => console.log('[DEBUG] Sent channel update log!'))
-      .catch(err => console.error('[ERROR] Failed to send log:', err));
+    logChannel.send({ embeds: [embed] }).catch(() => {});
   });
 };
