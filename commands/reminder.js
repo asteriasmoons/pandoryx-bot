@@ -336,8 +336,8 @@ function getSetupUI(data) {
       { label: 'Embed Color', value: 'embedColor', description: 'Change the embed color (hex)' }
     ]);
   const buttons = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('reminder-save').setLabel('Save').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('reminder-cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId('reminder-save').setLabel('Save').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('reminder-cancel').setLabel('Cancel').setStyle(ButtonStyle.Secondary)
   );
   return {
     embeds: [previewEmbed],
