@@ -1,52 +1,54 @@
-const { EmbedBuilder, Events, PermissionsBitField } = require('discord.js');
+const { EmbedBuilder, Events, PermissionsBitField, ChannelType } = require('discord.js');
 const LogConfig = require('../models/LogConfig');
 
 console.log('[DEBUG] messageEvent.js loaded!');
 
 module.exports = (client) => {
-  // Message Deleted
   client.on(Events.MessageDelete, async (message) => {
-  console.log('[DEBUG] MessageDelete event fired!');
-  if (!message.guild) return;
+    console.log('[DEBUG] MessageDelete event fired!');
+    if (!message.guild) return;
 
-  const config = await LogConfig.findOne({ guildId: message.guild.id });
-  if (!config?.logs?.messageDelete) return;
+    const config = await LogConfig.findOne({ guildId: message.guild.id });
+    if (!config?.logs?.messageDelete) return;
 
-  const logChannel = message.guild.channels.cache.get(config.logs.messageDelete);
-  if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    const logChannel = message.guild.channels.cache.get(config.logs.messageDelete);
+    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
-  let description = '';
+    let description = '';
 
-  if (message.content) {
-    description += `**Content:**\n${message.content}\n`;
-  }
+    if (message.content) {
+      description += `**Content:**\n${message.content}\n`;
+    }
 
-  // Check for embeds
-  if (message.embeds.length > 0) {
-    description += `**Embeds:**\n${message.embeds.map((embed, i) => `\`[Embed ${i + 1}] ${embed.title || 'No Title'} - ${embed.description || 'No Description'}\``).join('\n')}\n`;
-  }
+    if (message.embeds.length > 0) {
+      description += `**Embeds:**\n${message.embeds.map((embed, i) => `\`[Embed ${i + 1}] ${embed.title || 'No Title'} - ${embed.description || 'No Description'}\``).join('\n')}\n`;
+    }
 
-  // Check for attachments
-  if (message.attachments.size > 0) {
-    description += `**Attachments:**\n${message.attachments.map(att => att.url).join('\n')}\n`;
-  }
+    if (message.attachments.size > 0) {
+      description += `**Attachments:**\n${message.attachments.map(att => att.url).join('\n')}\n`;
+    }
 
-  if (!description) description = '*No Content, Embeds, or Attachments.*';
+    if (!description) description = '*No Content, Embeds, or Attachments.*';
 
-  const embed = new EmbedBuilder()
-    .setTitle('Message Deleted')
-    .setColor(0xff34cd)
-    .setDescription(
-      `**Author:** ${message.author?.tag} (${message.author?.id})\n` +
-      `**Channel:** <#${message.channel.id}>\n` +
-      description
-    )
-    .setTimestamp();
+    const isThread = message.channel.isThread();
+    const threadInfo = isThread
+      ? `**Thread:** <#${message.channel.id}> (${message.channel.name})\n`
+      : '';
 
-  logChannel.send({ embeds: [embed] }).catch(() => {});
-});
+    const embed = new EmbedBuilder()
+      .setTitle('Message Deleted')
+      .setColor(0xff34cd)
+      .setDescription(
+        `**Author:** ${message.author?.tag} (${message.author?.id})\n` +
+        `**Channel:** <#${isThread ? message.channel.parentId : message.channel.id}>\n` +
+        threadInfo +
+        description
+      )
+      .setTimestamp();
 
-  // Message Edited
+    logChannel.send({ embeds: [embed] }).catch(console.error);
+  });
+
   client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
     console.log('[DEBUG] MessageUpdate event fired!');
 
@@ -72,7 +74,6 @@ module.exports = (client) => {
     logChannel.send({ embeds: [embed] }).catch(console.error);
   });
 
-  // Bulk Delete
   client.on(Events.MessageBulkDelete, async (messages) => {
     console.log('[DEBUG] MessageBulkDelete event fired!');
 
