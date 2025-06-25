@@ -56,7 +56,7 @@ module.exports = (client) => {
     if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0xed4245)
+      .setColor(0x5d47a0)
       .setTitle('Channel Deleted')
       .addFields(
         { name: 'Name', value: channel.name, inline: true },
@@ -90,7 +90,7 @@ module.exports = (client) => {
     if (changes.length === 0) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0x12cdea)
+      .setColor(0x5d47a0)
       .setTitle('Channel Updated')
       .addFields(...changes, { name: 'Channel', value: `<#${newChannel.id}>` })
       .setTimestamp();
@@ -107,7 +107,7 @@ module.exports = (client) => {
     if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0x12cdea)
+      .setColor(0x5d47a0)
       .setTitle('Thread Created')
       .addFields(
         { name: 'Name', value: thread.name, inline: true },
@@ -127,7 +127,7 @@ module.exports = (client) => {
     if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0xed4245)
+      .setColor(0x5d47a0)
       .setTitle('Thread Deleted')
       .addFields(
         { name: 'Name', value: thread.name, inline: true },
