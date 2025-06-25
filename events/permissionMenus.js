@@ -61,7 +61,7 @@ function formatCommandLabel(cmd) {
   return cmd
     .split('.')
     .map(str => str.charAt(0).toUpperCase() + str.slice(1))
-    .join('  ');
+    .join(' ');
 }
 
 // Step 1: Show command group select

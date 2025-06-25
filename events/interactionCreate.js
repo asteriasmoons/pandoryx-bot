@@ -1502,7 +1502,7 @@ if (
       cmd
         .split('.')
         .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-        .join('  ');
+        .join(' ');
 
     const embed = new EmbedBuilder()
       .setTitle(`🔍 Permissions for \`${formatCommandLabel(commandName)}\``)
