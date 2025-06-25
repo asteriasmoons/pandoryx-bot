@@ -237,7 +237,17 @@ module.exports = {
     )
     .setFooter({ text: 'Pandoryx Help Pages' });
 
-	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds, leaveCmds, welcomeCmds, confessCmds, verifyCmds];
+    const permsCmds = new EmbedBuilder()
+    .setTitle('**Permissions Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</permissions set:1387514930013409430>', value: 'Setup permissions for each command' },
+        { name: '</permissions view:1387514930013409430>', value: 'View a commands permissions' },
+        { name: '</permissions reset:1387514930013409430>', value: 'Reset all server permissions configurations on commands' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds, leaveCmds, welcomeCmds, confessCmds, verifyCmds, permsCmds];
 
     // Embed navigation logic
     let currentPage = 0;
