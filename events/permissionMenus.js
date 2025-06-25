@@ -33,28 +33,36 @@ const commandGroups = {
 };
 
 const groupLabels = {
-	single: 'Singles',
-	embeds: 'Embeds',
-	notes: 'User Notes',
-	warns: 'Warnings',
-	bans: 'Banning',
-	kicks: 'Kicking',
-	autorole: 'Autoroles',
-	timeouts: 'Timeouts',
-	reactionrole: 'Reaction Roles',
-	tickets: 'Ticket System',
-	logs: 'Mod Logs',
-	roles: 'Role Panels',
-	stickymessages: 'Sticky Messaging',
-	levels: 'Leveling',
-	levelconfigs: 'Level Configuration',
-	reminders: 'Reminders System',
-	github: 'Github Feeds',
-	leavemessages: 'Leave Messages',
-	welcomemessages: 'Welcome Messages',
-	confessions: 'Confessions',
-	verification: 'Verification',
+  single: 'Singles',
+  embeds: 'Embeds',
+  notes: 'User Notes',
+  warns: 'Warnings',
+  bans: 'Banning',
+  kicks: 'Kicking',
+  autorole: 'Autoroles',
+  timeouts: 'Timeouts',
+  reactionrole: 'Reaction Roles',
+  tickets: 'Ticket System',
+  logs: 'Mod Logs',
+  roles: 'Role Panels',
+  stickymessages: 'Sticky Messaging',
+  levels: 'Leveling',
+  levelconfigs: 'Level Configuration',
+  reminders: 'Reminders System',
+  github: 'Github Feeds',
+  leavemessages: 'Leave Messages',
+  welcomemessages: 'Welcome Messages',
+  confessions: 'Confessions',
+  verification: 'Verification',
 };
+
+// ✅ Helper to format "note.add" → "Note › Add"
+function formatCommandLabel(cmd) {
+  return cmd
+    .split('.')
+    .map(str => str.charAt(0).toUpperCase() + str.slice(1))
+    .join(' › ');
+}
 
 // Step 1: Show command group select
 async function sendCommandGroupSelect(interaction) {
@@ -88,7 +96,7 @@ async function handleGroupSelect(interaction) {
     .setPlaceholder('Select a command')
     .addOptions(
       commands.map(cmd => ({
-        label: cmd,
+        label: formatCommandLabel(cmd), // 👈 updated label
         value: cmd
       }))
     );
@@ -116,7 +124,7 @@ async function handleCommandSelect(interaction) {
   const row = new ActionRowBuilder().addComponents(roleSelect);
 
   const embed = new EmbedBuilder()
-    .setTitle(`Command: \`${command}\``)
+    .setTitle(`Command: \`${formatCommandLabel(command)}\``)
     .setDescription('Select one or more roles that should be allowed to use this command.')
     .setColor(0x2f3136);
 
@@ -136,7 +144,7 @@ async function handleRoleSelect(interaction) {
 
   const embed = new EmbedBuilder()
     .setTitle('✅ Permissions Updated')
-    .setDescription(`Only the selected roles can now use \`${command}\`.`)
+    .setDescription(`Only the selected roles can now use \`${formatCommandLabel(command)}\`.`)
     .addFields({
       name: 'Allowed Roles',
       value: roleIds.map(r => `<@&${r}>`).join(', ')
