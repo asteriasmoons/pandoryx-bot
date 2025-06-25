@@ -1510,7 +1510,7 @@ if (interaction.customId === 'perm_view_group_select') {
 
   const row = new ActionRowBuilder().addComponents(select);
   const embed = new EmbedBuilder()
-    .setTitle(`${groupLabels[group] || group} › View`)
+    .setTitle(`${groupLabels[group] || group} View`)
     .setDescription('Select a command to view its role restrictions.')
     .setColor(0x2f3136);
 
