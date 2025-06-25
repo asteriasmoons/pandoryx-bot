@@ -20,6 +20,7 @@ const { sendGreetingEmbedEditor } = require('../events/ticketPanelUi');
 const LogConfig = require('../models/LogConfig');
 const RolePanel = require('../models/RolePanel');
 const reminderCommand = require('../commands/reminder.js');
+const VerifyPanel = require('../models/VerifyPanel');
 
 async function generateTranscript(channel) {
   let messages = [];
@@ -45,6 +46,7 @@ module.exports = {
     function isStaff(interaction) {
   return interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild);
 }
+
     // === BUTTON HANDLERS ===
     if (interaction.isButton()) {
       // === CONFESSION BUTTON ===
@@ -645,6 +647,33 @@ if (interaction.isButton() && interaction.customId.startsWith('open_ticket_modal
   return interaction.showModal(modal);
 }
 
+// ==== VERIFY BUTTON ====
+if (interaction.isButton() && interaction.customId === 'verify_panel_button') {
+  // Fetch verify panel config for this guild
+  const config = await VerifyPanel.findOne({ guildId: interaction.guild.id });
+  if (!config) {
+    return interaction.reply({ content: 'Verification panel config not found. Please notify an admin.', ephemeral: true });
+  }
+
+  const role = interaction.guild.roles.cache.get(config.roleId);
+  if (!role) {
+    return interaction.reply({ content: 'Verification role not found. Please notify an admin.', ephemeral: true });
+  }
+
+  // Already has the role?
+  if (interaction.member.roles.cache.has(role.id)) {
+    return interaction.reply({ content: `You are already verified!`, ephemeral: true });
+  }
+
+  // Try to assign
+  try {
+    await interaction.member.roles.add(role);
+    return interaction.reply({ content: 'You are now verified!', ephemeral: true });
+  } catch (err) {
+    return interaction.reply({ content: 'Failed to assign the verification role. Please contact a staff member.', ephemeral: true });
+  }
+}
+
     // === MODAL HANDLERS ===
     if (interaction.isModalSubmit()) {
       // /embed command modals (leave as is)
@@ -762,8 +791,7 @@ if (interaction.customId.startsWith('greeting_modal_embed_images:')) {
   return interaction.reply({ content: 'Greeting embed (images) updated.', ephemeral: true });
 }
 
-            // === TICKET PANEL EMBED MODALS (continued) ===
-
+      // === TICKET PANEL EMBED MODALS (continued) ===
       // Basic
       if (interaction.customId.startsWith('ticketpanel_modal_embed_basic:')) {
         const panelId = interaction.customId.split(':')[1];
