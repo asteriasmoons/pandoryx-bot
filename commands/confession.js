@@ -86,7 +86,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle('Anonymous Confessions')
-        .setDescription('Click the button below to send a completely anonymous confession.\nYour identity will **not** be saved or shown.')
+        .setDescription('Share your thoughts, secrets, or confessions anonymously with our community! Just click the button below to send in your confession—no names attached, just honesty and support. Whether its something funny, serious, or heartfelt, we are here to listen.')
         .setColor(0x9e3cff);
 
       const row = new ActionRowBuilder().addComponents(
