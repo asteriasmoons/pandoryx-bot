@@ -6,24 +6,45 @@ console.log('[DEBUG] messageEvent.js loaded!');
 module.exports = (client) => {
   // Message Deleted
   client.on(Events.MessageDelete, async (message) => {
-    console.log('[DEBUG] MessageDelete event fired!');
+  console.log('[DEBUG] MessageDelete event fired!');
+  if (!message.guild) return;
 
-    if (!message.guild || !message.content) return;
+  const config = await LogConfig.findOne({ guildId: message.guild.id });
+  if (!config?.logs?.messageDelete) return;
 
-    const config = await LogConfig.findOne({ guildId: message.guild.id });
-    if (!config?.logs?.messageDelete) return;
+  const logChannel = message.guild.channels.cache.get(config.logs.messageDelete);
+  if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
 
-    const logChannel = message.guild.channels.cache.get(config.logs.messageDelete);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+  let description = '';
 
-    const embed = new EmbedBuilder()
-      .setTitle('Message Deleted')
-      .setColor(0xff34cd)
-      .setDescription(`**Author:** ${message.author?.tag} (${message.author?.id})\n**Channel:** <#${message.channel.id}>\n**Content:**\n${message.content}`)
-      .setTimestamp();
+  if (message.content) {
+    description += `**Content:**\n${message.content}\n`;
+  }
 
-    logChannel.send({ embeds: [embed] }).catch(console.error);
-  });
+  // Check for embeds
+  if (message.embeds.length > 0) {
+    description += `**Embeds:**\n${message.embeds.map((embed, i) => `\`[Embed ${i + 1}] ${embed.title || 'No Title'} - ${embed.description || 'No Description'}\``).join('\n')}\n`;
+  }
+
+  // Check for attachments
+  if (message.attachments.size > 0) {
+    description += `**Attachments:**\n${message.attachments.map(att => att.url).join('\n')}\n`;
+  }
+
+  if (!description) description = '*No Content, Embeds, or Attachments.*';
+
+  const embed = new EmbedBuilder()
+    .setTitle('Message Deleted')
+    .setColor(0xff34cd)
+    .setDescription(
+      `**Author:** ${message.author?.tag} (${message.author?.id})\n` +
+      `**Channel:** <#${message.channel.id}>\n` +
+      description
+    )
+    .setTimestamp();
+
+  logChannel.send({ embeds: [embed] }).catch(() => {});
+});
 
   // Message Edited
   client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
