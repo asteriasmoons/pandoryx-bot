@@ -9,6 +9,7 @@ const {
   ButtonStyle,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
+  RoleSelectMenuInteraction,
   ChannelSelectMenuBuilder,
   ChannelType
 } = require('discord.js');
@@ -21,6 +22,7 @@ const LogConfig = require('../models/LogConfig');
 const RolePanel = require('../models/RolePanel');
 const reminderCommand = require('../commands/reminder.js');
 const VerifyPanel = require('../models/VerifyPanel');
+const { hasCommandPermission } = require('../utils/checkPermission');
 
 async function generateTranscript(channel) {
   let messages = [];
@@ -1462,27 +1464,67 @@ if (
   return reminderCommand.handleComponent(interaction, client);
 }
 
-    // === SLASH COMMAND HANDLER ===
-    if (interaction.isChatInputCommand()) {
-      const command = interaction.client.commands.get(interaction.commandName);
-      if (!command) return;
-      try {
-        if (!client.reactionRoleCache) {
-          client.reactionRoleCache = {};
-        }
-        await command.execute(interaction, client, client.reactionRoleCache);
-      } catch (error) {
-        console.error(error);
-        try {
-          if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ content: 'There was an error executing this command!' });
-          } else {
-            await interaction.reply({ content: 'There was an error executing this command!' });
-          }
-        } catch (err) {
-          console.error('Failed to reply to interaction:', err);
-        }
-      }
+  // === Permissions System Menu Interactions ===
+    if (interaction.isStringSelectMenu()) {
+    const customId = interaction.customId;
+
+    if (customId === 'perm_group_select') {
+      return require('../events/permissionMenus').handleGroupSelect(interaction);
+    }
+
+    if (customId.startsWith('perm_command_select')) {
+      return require('../events/permissionMenus').handleCommandSelect(interaction);
     }
   }
-};
+
+    if (interaction.isRoleSelectMenu()) {
+    const customId = interaction.customId;
+
+    if (customId.startsWith('perm_role_select')) {
+      return require('../events/permissionMenus').handleRoleSelect(interaction);
+    }
+  }
+
+// === SLASH COMMAND HANDLER ===
+if (interaction.isChatInputCommand()) {
+  const command = interaction.client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  // ✅ Build full permission string (e.g. 'ticketpanel.create' or 'sticky.embed.send')
+  let fullCommand = interaction.commandName;
+  const group = interaction.options.getSubcommandGroup(false);
+  const sub = interaction.options.getSubcommand(false);
+
+  if (group) fullCommand += `.${group}`;
+  if (sub) fullCommand += `.${sub}`;
+
+  // ✅ Global permission check
+  const allowed = await hasCommandPermission(interaction, fullCommand);
+  if (!allowed) {
+    return interaction.reply({
+      content: '🚫 You do not have permission to use this command.',
+      ephemeral: true
+    });
+  }
+
+  try {
+    if (!client.reactionRoleCache) {
+      client.reactionRoleCache = {};
+    }
+
+    await command.execute(interaction, client, client.reactionRoleCache);
+  } catch (error) {
+    console.error(error);
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: 'There was an error executing this command!' });
+      } else {
+        await interaction.reply({ content: 'There was an error executing this command!' });
+      }
+    } catch (err) {
+      console.error('Failed to reply to interaction:', err);
+    }
+  }
+}
+  }
+}
