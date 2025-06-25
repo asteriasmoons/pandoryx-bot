@@ -1,23 +1,14 @@
-// commands/permissions.js
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
   ActionRowBuilder,
-  EmbedBuilder,
-  ComponentType
+  EmbedBuilder
 } = require('discord.js');
 const CommandPermissions = require('../models/CommandPermissions');
+const { sendCommandGroupSelect } = require('../events/permissionMenus');
 
-// 🧠 Shared helper for formatting display labels
-function formatCommandLabel(cmd) {
-  return cmd
-    .split('.')
-    .map(str => str.charAt(0).toUpperCase() + str.slice(1))
-    .join(' › ');
-}
-
-// 👇 Same structure you used in permissionMenus.js
+// ⬇️ Your full commandGroups list (copied from permissionMenus.js)
 const commandGroups = {
   single: ['help', 'clear', 'report', 'messagetags'],
   embeds: ['embed.create', 'embed.edit', 'embed.delete', 'embed.send', 'embed.view', 'embed.list'],
@@ -42,6 +33,13 @@ const commandGroups = {
   verification: ['verify.panel', 'verify.panel_edit'],
 };
 
+function formatCommandLabel(cmd) {
+  return cmd
+    .split('.')
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('  ');
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('permissions')
@@ -54,91 +52,53 @@ module.exports = {
       sub.setName('view').setDescription('View allowed roles for a command')
     )
     .addSubcommand(sub =>
-      sub.setName('reset').setDescription('Reset a command\'s permissions to public')
+      sub.setName('reset').setDescription('Reset all permissions (make all commands public)')
     ),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'set') {
-      const { sendCommandGroupSelect } = require('../events/permissionMenus');
-      return await sendCommandGroupSelect(interaction);
+      return sendCommandGroupSelect(interaction);
     }
 
-    // Shared logic for view/reset
-    const flatCommands = Object.values(commandGroups).flat();
-
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId(`perm_${sub}_select`)
-      .setPlaceholder('Select a command')
-      .addOptions(
-        flatCommands.map(cmd => ({
-          label: formatCommandLabel(cmd),
-          value: cmd
-        }))
-      );
-
-    const row = new ActionRowBuilder().addComponents(selectMenu);
-
-    const prompt = new EmbedBuilder()
-      .setTitle(`${sub === 'view' ? '🔍 View' : '♻️ Reset'} Command Permissions`)
-      .setDescription('Pick a command to continue.')
-      .setColor(0x2f3136);
-
-    await interaction.reply({
-      embeds: [prompt],
-      components: [row],
-      ephemeral: true
-    });
-
-    // Wait for menu selection
-    const response = await interaction.channel.awaitMessageComponent({
-      componentType: ComponentType.StringSelect,
-      time: 30_000,
-      filter: i => i.user.id === interaction.user.id && i.customId === `perm_${sub}_select`
-    });
-
-    const commandName = response.values[0];
-
     if (sub === 'view') {
-      const record = await CommandPermissions.findOne({
-        guildId: interaction.guildId,
-        command: commandName
-      });
+      const flatCommands = Object.values(commandGroups).flat();
+      const select = new StringSelectMenuBuilder()
+        .setCustomId('perm_view_select')
+        .setPlaceholder('Select a command to view permissions')
+        .addOptions(
+          flatCommands.map(cmd => ({
+            label: formatCommandLabel(cmd),
+            value: cmd
+          }))
+        );
 
+      const row = new ActionRowBuilder().addComponents(select);
       const embed = new EmbedBuilder()
-        .setTitle(`🔍 Permissions: \`${formatCommandLabel(commandName)}\``)
-        .setColor(0x5865F2);
+        .setTitle('View Command Permissions')
+        .setDescription('Select a command below to see who can use it.')
+        .setColor(0x2f3136);
 
-      if (!record || record.allowedRoles.length === 0) {
-        embed.setDescription('No override set — this command is currently **public**.');
-      } else {
-        embed.setDescription('This command is restricted to the following role(s):');
-        embed.addFields({
-          name: 'Allowed Roles',
-          value: record.allowedRoles.map(r => `<@&${r}>`).join(', ')
-        });
-      }
-
-      await response.update({ embeds: [embed], components: [] });
+      return interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true
+      });
     }
 
     if (sub === 'reset') {
-      const result = await CommandPermissions.findOneAndDelete({
-        guildId: interaction.guildId,
-        command: commandName
+      const result = await CommandPermissions.deleteMany({
+        guildId: interaction.guildId
       });
 
       const embed = new EmbedBuilder()
-        .setTitle(`♻️ Permissions Reset: \`${formatCommandLabel(commandName)}\``)
-        .setDescription(
-          result
-            ? '✅ The command is now **public**.'
-            : 'ℹ️ No override was set — this command was already public.'
-        )
-        .setColor(0x57F287);
+        .setTitle('🔄 Permissions Reset')
+        .setDescription(`All command-specific permission overrides have been removed.\nCommands are now **public** unless otherwise restricted.`)
+        .setColor(0x57F287)
+        .addFields({ name: 'Entries Deleted', value: `${result.deletedCount}` });
 
-      await response.update({ embeds: [embed], components: [] });
+      return interaction.reply({ embeds: [embed], ephemeral: true });
     }
   }
 };
