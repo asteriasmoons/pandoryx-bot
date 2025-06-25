@@ -1494,8 +1494,9 @@ function formatCommandLabel(cmd) {
 
 // Group selected
 if (interaction.customId === 'perm_view_group_select') {
+  const { commandGroups, groupLabels } = require('../data/commandPermissions');
   const group = interaction.values[0];
-  const commands = require('../commands/permissions.js').__commandGroups[group];
+  const commands = commandGroups[group]; // ✅ THIS FIXES IT
 
   const select = new StringSelectMenuBuilder()
     .setCustomId(`perm_view_command_select:${group}`)
@@ -1509,7 +1510,7 @@ if (interaction.customId === 'perm_view_group_select') {
 
   const row = new ActionRowBuilder().addComponents(select);
   const embed = new EmbedBuilder()
-    .setTitle(`Viewing: ${group}`)
+    .setTitle(`${groupLabels[group] || group} › View`)
     .setDescription('Select a command to view its role restrictions.')
     .setColor(0x2f3136);
 
