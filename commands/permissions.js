@@ -33,11 +33,13 @@ const commandGroups = {
   verification: ['verify.panel', 'verify.panel_edit'],
 };
 
+module.exports.__commandGroups = commandGroups;
+
 function formatCommandLabel(cmd) {
   return cmd
     .split('.')
     .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-    .join('  ');
+    .join(' ');
 }
 
 module.exports = {
@@ -62,30 +64,25 @@ module.exports = {
       return sendCommandGroupSelect(interaction);
     }
 
-    if (sub === 'view') {
-      const flatCommands = Object.values(commandGroups).flat();
-      const select = new StringSelectMenuBuilder()
-        .setCustomId('perm_view_select')
-        .setPlaceholder('Select a command to view permissions')
-        .addOptions(
-          flatCommands.map(cmd => ({
-            label: formatCommandLabel(cmd),
-            value: cmd
-          }))
-        );
+	if (sub === 'view') {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('perm_view_group_select')
+    .setPlaceholder('Select a command group')
+    .addOptions(
+      Object.keys(commandGroups).map(group => ({
+        label: group.charAt(0).toUpperCase() + group.slice(1),
+        value: group
+      }))
+    );
 
-      const row = new ActionRowBuilder().addComponents(select);
-      const embed = new EmbedBuilder()
-        .setTitle('View Command Permissions')
-        .setDescription('Select a command below to see who can use it.')
-        .setColor(0x2f3136);
+  const row = new ActionRowBuilder().addComponents(select);
+  const embed = new EmbedBuilder()
+    .setTitle('View Command Permissions')
+    .setDescription('Select a command group to begin.')
+    .setColor(0x2f3136);
 
-      return interaction.reply({
-        embeds: [embed],
-        components: [row],
-        ephemeral: true
-      });
-    }
+  return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+}
 
     if (sub === 'reset') {
       const result = await CommandPermissions.deleteMany({

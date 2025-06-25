@@ -1486,40 +1486,59 @@ if (
   }
 
   // ==== VIEW PERMISSIONS ====
-  if (interaction.isStringSelectMenu()) {
-  const customId = interaction.customId;
+const CommandPermissions = require('../models/CommandPermissions');
 
-  if (customId === 'perm_view_select') {
-    const commandName = interaction.values[0];
-    const CommandPermissions = require('../models/CommandPermissions');
+function formatCommandLabel(cmd) {
+  return cmd.split('.').map(s => s[0].toUpperCase() + s.slice(1)).join(' ');
+}
 
-    const record = await CommandPermissions.findOne({
-      guildId: interaction.guildId,
-      command: commandName
-    });
+// Group selected
+if (interaction.customId === 'perm_view_group_select') {
+  const group = interaction.values[0];
+  const commands = require('../commands/permissions.js').__commandGroups[group];
 
-    const formatCommandLabel = (cmd) =>
-      cmd
-        .split('.')
-        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(' ');
+  const select = new StringSelectMenuBuilder()
+    .setCustomId(`perm_view_command_select:${group}`)
+    .setPlaceholder('Select a command')
+    .addOptions(
+      commands.map(cmd => ({
+        label: formatCommandLabel(cmd),
+        value: cmd
+      }))
+    );
 
-    const embed = new EmbedBuilder()
-      .setTitle(`🔍 Permissions for \`${formatCommandLabel(commandName)}\``)
-      .setColor(0x5865F2);
+  const row = new ActionRowBuilder().addComponents(select);
+  const embed = new EmbedBuilder()
+    .setTitle(`Viewing: ${group}`)
+    .setDescription('Select a command to view its role restrictions.')
+    .setColor(0x2f3136);
 
-    if (!record || record.allowedRoles.length === 0) {
-      embed.setDescription('This command is **public** — no restrictions set.');
-    } else {
-      embed.setDescription('This command is restricted to the following role(s):');
-      embed.addFields({
+  return interaction.update({ embeds: [embed], components: [row] });
+}
+
+// Command selected
+if (interaction.customId.startsWith('perm_view_command_select')) {
+  const command = interaction.values[0];
+  const record = await CommandPermissions.findOne({
+    guildId: interaction.guildId,
+    command
+  });
+
+  const embed = new EmbedBuilder()
+    .setTitle(`🔍 Permissions: ${formatCommandLabel(command)}`)
+    .setColor(0x5865F2);
+
+  if (!record || record.allowedRoles.length === 0) {
+    embed.setDescription('This command is **public** — no restrictions set.');
+  } else {
+    embed.setDescription('Restricted to the following roles:')
+      .addFields({
         name: 'Allowed Roles',
         value: record.allowedRoles.map(id => `<@&${id}>`).join(', ')
       });
-    }
-
-    return interaction.update({ embeds: [embed], components: [] });
   }
+
+  return interaction.update({ embeds: [embed], components: [] });
 }
 
 // === SLASH COMMAND HANDLER ===
