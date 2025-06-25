@@ -1518,7 +1518,7 @@ if (interaction.customId === 'perm_view_group_select') {
 }
 
 // Command selected
-if (interaction.customId.startsWith('perm_view_command_select')) {
+if (typeof interaction.customId === 'string' && interaction.customId.startsWith('perm_view_command_select')) {
   const command = interaction.values[0];
   const record = await CommandPermissions.findOne({
     guildId: interaction.guildId,
