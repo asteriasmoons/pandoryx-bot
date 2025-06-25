@@ -14,7 +14,9 @@ module.exports = {
 	.setDescription('This is the help menu for the bot. All commands are listed here and are clickable, so you can use them immediately by selecting them. Commands are organized into groups, and each page of the help menu explains what each command does within its group, making it easy to find and understand the features you need.')
 	.addFields(
 		{ name: '</help:1375869926400725152>', value: 'The help command with pages.' },
-        { name: '', value: 'Clears an amount of messages in a channel.' }
+        { name: '</clear:1386001053069213910>', value: 'Clears an amount of messages in a channel.' },
+        { name: '</report:1386523140791730247>', value: 'Send a report or some feedback to the developer' },
+        { name: '</messagetags:1386790621657960448>', value: 'See all the variables you can use in welcome/leave messages' }
 	)
 	.setFooter({ text: 'Pandoryx Help Pages' });
 
@@ -199,7 +201,43 @@ module.exports = {
     )
     .setFooter({ text: 'Pandoryx Help Pages' });
 
-	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds];
+    const leaveCmds = new EmbedBuilder()
+    .setTitle('**Leave Message Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</setleave set:1386790621657960449>', value: 'Setup a leave message for whenever someone leaves your server.' },
+        { name: '</setleave test:1386790621657960449>', value: 'Test your leave message' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const welcomeCmds = new EmbedBuilder()
+    .setTitle('**Welcome Message Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</setwelcome set:1386790621657960450>', value: 'Set up welcome messages for your server' },
+        { name: '</setwelcome test:1386790621657960450>', value: 'Test your new welcome message for your server' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const confessCmds = new EmbedBuilder()
+    .setTitle('**Confession Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</confessions setup:1387182536589049928>', value: 'Setup the confessions for your server with options' },
+        { name: '</confessions send:1387182536589049928>', value: 'Sends the confession panel that you configured' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+    const verifyCmds = new EmbedBuilder()
+    .setTitle('**Verify Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</verify panel:1387418694329831476>', value: 'Setup your verification button system in your server' },
+        { name: '</verify panel_edit:1387418694329831476>', value: 'Edit your verification panel button, embed, and optional emoji' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds, leaveCmds, welcomeCmds, confessCmds, verifyCmds];
 
     // Embed navigation logic
     let currentPage = 0;
