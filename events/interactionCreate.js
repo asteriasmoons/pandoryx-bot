@@ -1494,7 +1494,7 @@ function formatCommandLabel(cmd) {
 
 // Group selected
 if (interaction.customId === 'perm_view_group_select') {
-  const { commandGroups, groupLabels } = require('../data/commandPermissions');
+  const { commandGroups, groupLabels } = require('./data/commandPermissions.js');
   const group = interaction.values[0];
   const commands = commandGroups[group]; // ✅ THIS FIXES IT
 
