@@ -19,6 +19,10 @@ module.exports = {
       sub.setName('view')
         .setDescription('View current logging channel settings.')
     )
+    .addSubcommand(sub =>
+      sub.setName('disable')
+        .setDescription('Disable ALL logging (removes all log channels).')
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
@@ -48,22 +52,27 @@ module.exports = {
           { label: 'Ban', value: 'ban' },
           { label: 'Kick', value: 'kick' }
         ]);
-
       const row = new ActionRowBuilder().addComponents(eventSelect);
 
-      await interaction.reply({
-        content: '🛠️ Select an event you want to assign a log channel for:',
-        components: [row],
-        ephemeral: true
-      });
+      const selectEmbed = new EmbedBuilder()
+      .setTitle('Logging Configuration')
+      .setDescription('Select an event you want to assign a log channel for below.')
+      .setColor(0x5865F2)
+      .setFooter({ text: interaction.guild.name })
+      .setTimestamp();
+
+          await interaction.reply({
+          embeds: [selectEmbed],
+          components: [row],
+          ephemeral: true
+        });
     }
 
     // === /log view ===
     if (sub === 'view') {
       const config = await LogConfig.findOne({ guildId: interaction.guild.id });
-
       const embed = new EmbedBuilder()
-        .setTitle('📋 Logging Configuration')
+        .setTitle('Logging Configuration')
         .setColor(0x5865F2)
         .setFooter({ text: interaction.guild.name })
         .setTimestamp();
@@ -77,11 +86,44 @@ module.exports = {
             .replace(/\b\w/g, l => l.toUpperCase()); // capitalize words
           return `• **${label}** → <#${channelId}>`;
         });
-
         embed.setDescription(formatted.join('\n'));
       }
 
       await interaction.reply({ embeds: [embed], ephemeral: false });
+    }
+
+    // === /log disable ===
+    if (sub === 'disable') {
+      const config = await LogConfig.findOne({ guildId: interaction.guild.id });
+
+      if (!config || !config.logs || Object.keys(config.logs).length === 0) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('Nothing to Disable')
+              .setDescription('No logging channels are currently set up.')
+              .setColor(0xed4245)
+              .setFooter({ text: interaction.guild.name })
+              .setTimestamp()
+          ],
+          ephemeral: true
+        });
+      }
+
+      config.logs = {}; // Remove all log assignments
+      await config.save();
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Logging Disabled')
+            .setDescription('All logging channels have been cleared for this server.')
+            .setColor(0xed4245)
+            .setFooter({ text: interaction.guild.name })
+            .setTimestamp()
+        ],
+        ephemeral: false
+      });
     }
   }
 };
