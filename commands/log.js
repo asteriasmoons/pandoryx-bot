@@ -94,35 +94,41 @@ module.exports = {
 
     // === /log disable ===
     if (sub === 'disable') {
-      const config = await LogConfig.findOne({ guildId: interaction.guild.id });
+      // Show select menu to choose which log event to disable
+      const disableSelect = new StringSelectMenuBuilder()
+        .setCustomId('disableLogEvent')
+        .setPlaceholder('Select an event to disable logging for')
+        .addOptions([
+          { label: 'Member Join', value: 'memberJoin' },
+          { label: 'Member Leave', value: 'memberLeave' },
+          { label: 'Message Deleted', value: 'messageDelete' },
+          { label: 'Message Edited', value: 'messageEdit' },
+          { label: 'Bulk Delete', value: 'bulkDelete' },
+          { label: 'Nickname Changed', value: 'nicknameChange' },
+          { label: 'Avatar Changed', value: 'avatarChange' },
+          { label: 'Channel Created', value: 'channelCreate' },
+          { label: 'Channel Updated', value: 'channelUpdate' },
+          { label: 'Channel Deleted', value: 'channelDelete' },
+          { label: 'Role Create', value: 'roleCreate' },
+          { label: 'Role Updated', value: 'roleUpdate' },
+          { label: 'Role Delete', value: 'roleDelete' },
+          { label: 'Warn', value: 'warn' },
+          { label: 'Timeout', value: 'timeout' },
+          { label: 'Ban', value: 'ban' },
+          { label: 'Kick', value: 'kick' }
+        ]);
 
-      if (!config || !config.logs || Object.keys(config.logs).length === 0) {
-        return interaction.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle('Nothing to Disable')
-              .setDescription('No logging channels are currently set up.')
-              .setColor(0xed4245)
-              .setFooter({ text: interaction.guild.name })
-              .setTimestamp()
-          ],
-          ephemeral: true
-        });
-      }
-
-      config.logs = {}; // Remove all log assignments
-      await config.save();
+      const row = new ActionRowBuilder().addComponents(disableSelect);
 
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Logging Disabled')
-            .setDescription('All logging channels have been cleared for this server.')
+            .setTitle('Disable Logging Event')
+            .setDescription('Select a log event below to disable its logging.\n\nYou can always re-enable it later using `/log config`.')
             .setColor(0xed4245)
-            .setFooter({ text: interaction.guild.name })
-            .setTimestamp()
         ],
-        ephemeral: false
+        components: [row],
+        ephemeral: true
       });
     }
   }

@@ -1379,8 +1379,9 @@ if (interaction.isModalSubmit() && interaction.customId === 'ticket_close_reason
       }
     }
 
+    // ==== LOG CONFIGURATION ====
      // STEP 1: User picks log event type
-  if (interaction.isStringSelectMenu() && interaction.customId === 'selectLogEvent') {
+    if (interaction.isStringSelectMenu() && interaction.customId === 'selectLogEvent') {
     await interaction.deferUpdate(); // keeps interaction alive
 
     const selectedEvent = interaction.values[0];
@@ -1426,6 +1427,27 @@ if (interaction.isModalSubmit() && interaction.customId === 'ticket_close_reason
       components: []
     });
   }
+
+  // === DISABLE LOG EVENT HANDLER ===
+  if (interaction.isStringSelectMenu() && interaction.customId === 'disableLogEvent') {
+  await interaction.deferUpdate();
+  const eventType = interaction.values[0];
+
+  await LogConfig.findOneAndUpdate(
+    { guildId: interaction.guild.id },
+    { $unset: { [`logs.${eventType}`]: "" } }
+  );
+
+  await interaction.editReply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0xed4245)
+        .setTitle('Logging Disabled')
+        .setDescription(`Logging for **${eventType}** has been **disabled**.`)
+    ],
+    components: []
+  });
+}
 
   // --- ROLEPANEL SELECT MENU HANDLER ---
 if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepanel_select_')) {
