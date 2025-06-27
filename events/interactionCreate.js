@@ -1567,51 +1567,71 @@ if (typeof interaction.customId === 'string' && interaction.customId.startsWith(
 }
 
 // ==== AUTOTHREAD CONFIG LOGIC ====
-// interactionCreate.js (inside your event handler)
-
-// Required models and classes at the top (assuming you already have these)
-// const AutoThreadConfig = require('../models/AutoThreadConfig');
-// const { ChannelType } = require('discord.js');
-
 if (
-  interaction.isChannelSelectMenu() && // Only process if it's a channel select menu
-  interaction.customId === 'autothread_channel_select' // CustomId matches only our intended menu
+  interaction.isChannelSelectMenu() &&
+  interaction.customId === 'autothread_channel_select'
 ) {
-  // Fail proof: Only this exact menu triggers the logic!
-
-  // Get the selected channel IDs from the menu (array of up to 10)
   const selectedChannelIds = interaction.values;
 
-  // Load the guild's auto-thread config from MongoDB, or create one if missing
   let config = await AutoThreadConfig.findOne({ guildId: interaction.guild.id });
   if (!config) {
     config = await AutoThreadConfig.create({
       guildId: interaction.guild.id,
       channels: [],
+      archivedChannels: [],
     });
   }
 
-  // Remove any channels that are no longer selected
-  config.channels = config.channels.filter(c => selectedChannelIds.includes(c.channelId));
+  // 1. Archive configs for channels being removed this round:
+  const removedChannels = config.channels.filter(c => !selectedChannelIds.includes(c.channelId));
+  if (!config.archivedChannels) config.archivedChannels = [];
+  for (const removed of removedChannels) {
+    if (!config.archivedChannels.some(a => a.channelId === removed.channelId)) {
+      config.archivedChannels.push(removed);
+    }
+  }
 
-  // Add new channels that were just selected
+  // 2. Build new channels array, restoring settings if re-added
+  const newChannels = [];
   for (const id of selectedChannelIds) {
-    if (!config.channels.some(c => c.channelId === id)) {
-      config.channels.push({
+    let found = config.channels.find(c => c.channelId === id);
+    if (!found && config.archivedChannels) {
+      found = config.archivedChannels.find(c => c.channelId === id);
+    }
+    if (found) {
+      newChannels.push(found);
+    } else {
+      newChannels.push({
         channelId: id,
-        embed: {}, // Blank embed config (uses defaults)
-        threadNameTemplate: 'Thread for {user}', // Default thread naming
+        embed: {},
+        threadNameTemplate: 'Thread for {user}',
       });
     }
   }
 
-  // Save the updated config to MongoDB
+  // 3. Assign new channels and clean up archive
+  config.channels = newChannels;
+  config.archivedChannels = config.archivedChannels.filter(
+    c => !selectedChannelIds.includes(c.channelId)
+  );
+
   await config.save();
 
-  // Give the user a confirmation message with mentions for the channels
+  // Build confirmation embed
+  const confirmationEmbed = new EmbedBuilder()
+    .setTitle('Auto-Thread Channels Updated')
+    .setDescription(
+      [
+        `Auto-threading is now enabled for:\n${selectedChannelIds.map(id => `<#${id}>`).join(', ')}`,
+        '',
+        '**Tip:** You can safely re-add a channel at any time and your previous embed and thread settings will be restored.',
+      ].join('\n')
+    )
+    .setColor('#43B581'); // Discord green
+
   await interaction.update({
-    content: `✅ Auto-threading is now enabled for: ${selectedChannelIds.map(id => `<#${id}>`).join(', ')}\n\nYou can now use \`/autothread edit embed\` and \`/autothread threadname\` for each channel.`,
-    components: [], // Remove the menu after confirming
+    embeds: [confirmationEmbed],
+    components: [],
   });
 }
 

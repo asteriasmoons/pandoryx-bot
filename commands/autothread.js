@@ -102,23 +102,35 @@ module.exports = {
     const subcommand = interaction.options.getSubcommand();
 
     // === /autothread channel config ===
-    if (subcommand === 'channel') {
-      // Send Discord's native channel select menu (lets users search and pick up to 10)
-      const menu = new ActionRowBuilder().addComponents(
-        new ChannelSelectMenuBuilder()
-          .setCustomId('autothread_channel_select') // This must match your interaction handler!
-          .setPlaceholder('Pick up to 10 channels')
-          .setMinValues(1)
-          .setMaxValues(10)
-          .addChannelTypes(ChannelType.GuildText)
-      );
+		if (subcommand === 'channel') {
+  	// Instruction embed
+  	const embed = new EmbedBuilder()
+    .setTitle('Configure Auto-Thread Channels')
+    .setDescription(
+      [
+        'Select up to 10 channels for auto-threading.',
+        '**IMPORTANT:** Any channels not selected will be disabled!',
+        'If you want to add or remove a channel, you must reselect all channels you want enabled.',
+        '',
+        'Your previous embed and thread settings will be restored if you re-add a channel later.'
+      ].join('\n')
+    )
+    .setColor('#5865F2'); // Discord blurple
 
-      await interaction.reply({
-        content: 'Select which channels should have auto-threading enabled:',
-        components: [menu],
-        ephemeral: true,
-      });
+  const menu = new ActionRowBuilder().addComponents(
+    new ChannelSelectMenuBuilder()
+      .setCustomId('autothread_channel_select')
+      .setPlaceholder('Pick up to 10 channels')
+      .setMinValues(1)
+      .setMaxValues(10)
+      .addChannelTypes(ChannelType.GuildText)
+  );
 
+  await interaction.reply({
+    embeds: [embed],
+    components: [menu],
+    ephemeral: true,
+  });
       // Menu logic is handled in your interactionCreate.js (fail proof pattern)
       return;
     }

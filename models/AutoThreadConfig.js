@@ -48,11 +48,15 @@ const ChannelConfigSchema = new mongoose.Schema({
  * Main schema for AutoThread configuration per guild
  * - guildId:   Discord Guild (Server) ID — unique per server
  * - channels:  Array of per-channel config objects (see above)
+ * - archivedChannels: Stores config for channels that were previously set up but are now disabled.
+ *     - When a channel is removed from auto-threading, its config is moved here instead of being deleted.
+ *     - If that channel is re-added, its settings (embed, template) are restored from this array.
  *
  * This schema will ensure:
  *   - Only one config document per guild (unique index on guildId)
  *   - Up to 10 channels can be configured per guild (enforce in command logic, not schema)
  *   - Each channel config can have a custom embed and thread name
+ *   - archivedChannels prevents accidental loss of user settings for removed channels
  */
 const AutoThreadConfigSchema = new mongoose.Schema({
   guildId: {
@@ -65,6 +69,12 @@ const AutoThreadConfigSchema = new mongoose.Schema({
     type: [ChannelConfigSchema],
     default: [], // No channels configured by default
     // Enforce 10 max in your code/commands!
+  },
+  archivedChannels: {
+    type: [ChannelConfigSchema],
+    default: [], // No archived configs by default
+    // When a channel is "removed" by the user, we move its config here instead of deleting it.
+    // If the user re-adds a channel, its config is restored from here.
   },
 });
 
