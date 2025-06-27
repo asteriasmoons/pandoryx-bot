@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ChannelType, EmbedBuilder } = require('discord.js');
 const GitHubFeed = require('../models/GitHubFeed');
+const axios = require('axios');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -39,9 +40,66 @@ module.exports = {
       const channel = interaction.options.getChannel('channel');
       const branch = interaction.options.getString('branch') || 'main';
 
+      const [owner, repo] = repoUrl.split('/').slice(-2);
+
+      // --- Fetch latest commit SHA ---
+      let lastCommitSha = undefined;
+      try {
+        const commitRes = await axios.get(
+          `https://api.github.com/repos/${owner}/${repo}/commits/${branch}`,
+          {
+            headers: {
+              'User-Agent': 'Pandoryx-Bot',
+              'Authorization': `token ${process.env.GITHUB_TOKEN}`
+            }
+          }
+        );
+        lastCommitSha = commitRes.data.sha;
+      } catch (e) {
+        // fallback: leave undefined if can't fetch
+      }
+
+      // --- Fetch latest issue ID ---
+      let lastIssueId = undefined;
+      try {
+        const issueRes = await axios.get(
+          `https://api.github.com/repos/${owner}/${repo}/issues?state=all&sort=created&direction=desc&per_page=1`,
+          {
+            headers: {
+              'User-Agent': 'Pandoryx-Bot',
+              'Authorization': `token ${process.env.GITHUB_TOKEN}`
+            }
+          }
+        );
+        const latestIssue = issueRes.data.find(i => !i.pull_request);
+        if (latestIssue) lastIssueId = latestIssue.id;
+      } catch (e) {}
+
+      // --- Fetch latest release ID ---
+      let lastReleaseId = undefined;
+      try {
+        const relRes = await axios.get(
+          `https://api.github.com/repos/${owner}/${repo}/releases?per_page=1`,
+          {
+            headers: {
+              'User-Agent': 'Pandoryx-Bot',
+              'Authorization': `token ${process.env.GITHUB_TOKEN}`
+            }
+          }
+        );
+        if (relRes.data.length > 0) lastReleaseId = relRes.data[0].id;
+      } catch (e) {}
+
+      // --- Save to DB ---
       await GitHubFeed.findOneAndUpdate(
         { guildId, repoUrl },
-        { channelId: channel.id, branch },
+        {
+          channelId: channel.id,
+          branch,
+          lastCommitSha,
+          lastIssueId,
+          lastReleaseId
+        },
         { upsert: true }
       );
 
