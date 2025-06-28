@@ -247,7 +247,17 @@ module.exports = {
     )
     .setFooter({ text: 'Pandoryx Help Pages' });
 
-	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds, leaveCmds, welcomeCmds, confessCmds, verifyCmds, permsCmds];
+    const autothreadCmds = new EmbedBuilder()
+    .setTitle('**Autothread Commands**')
+    .setColor('#ff51fe')
+    .addFields(
+        { name: '</autothread channel:1388196111986065591>', value: 'Pulls up a select menu of channels that you can enable autothreading on. You need to reselect previously configured channels if you add any new channels to the list.' },
+        { name: '</autothread edit:1388196111986065591>', value: 'Edit the embed message that is automatically sent in the autothread.' },
+        { name: '</autothread threadname:1388196111986065591>', value: 'Change the name of the threads that will be created in your setup channel(s)' }
+    )
+    .setFooter({ text: 'Pandoryx Help Pages' });
+
+	const embeds = [helpPages, embedCmds, noteCmds, warnCmds, banCmds, kickCmds, autoRoleCmds, timeoutCmds, reactionRoleCmds, ticketCmds, logCmds, rolePanelCmds, stickyCmds, levelCmds, lvlconfigCmds, reminderCmds, githubCmds, leaveCmds, welcomeCmds, confessCmds, verifyCmds, permsCmds, autothreadCmds];
 
     // Embed navigation logic
     let currentPage = 0;
