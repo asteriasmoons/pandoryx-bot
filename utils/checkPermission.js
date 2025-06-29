@@ -1,5 +1,5 @@
 // utils/checkPermission.js
-const CommandPermissions = require('../models/CommandPermissions');
+const CommandPermissions = require("../models/CommandPermissions");
 
 async function hasCommandPermission(interaction, commandName) {
   // ✅ Always allow guild owner
@@ -10,13 +10,13 @@ async function hasCommandPermission(interaction, commandName) {
 
   const data = await CommandPermissions.findOne({
     guildId: interaction.guildId,
-    command: commandName
+    command: commandName,
   });
 
   if (!data || data.allowedRoles.length === 0) return true;
 
-  const userRoles = interaction.member.roles.cache.map(role => role.id);
-  return data.allowedRoles.some(roleId => userRoles.includes(roleId));
+  const userRoles = interaction.member.roles.cache.map((role) => role.id);
+  return data.allowedRoles.some((roleId) => userRoles.includes(roleId));
 }
 
 module.exports = { hasCommandPermission };

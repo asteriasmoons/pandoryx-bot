@@ -1,21 +1,22 @@
 // utils/sendWelcomeLeave.js
-const WelcomeConfig = require('../models/WelcomeConfig');
-const Embed = require('../models/Embed');
-const { EmbedBuilder } = require('discord.js');
+const WelcomeConfig = require("../models/WelcomeConfig");
+const Embed = require("../models/Embed");
+const { EmbedBuilder } = require("discord.js");
 
 function buildEmbedFromDoc(embedDoc, member, guild) {
   const replacements = {
-    '{user}': `<@${member.id}>`,
-    '{username}': member.user.username,
-    '{userTag}': member.user.tag,
-    '{userId}': member.id,
-    '{userAvatar}': member.user.displayAvatarURL({ dynamic: true }),
-    '{server}': guild.name,
+    "{user}": `<@${member.id}>`,
+    "{username}": member.user.username,
+    "{userTag}": member.user.tag,
+    "{userId}": member.id,
+    "{userAvatar}": member.user.displayAvatarURL({ dynamic: true }),
+    "{server}": guild.name,
   };
   const replace = (text) => {
     if (!text) return undefined;
     return Object.entries(replacements).reduce(
-      (acc, [key, value]) => acc.replaceAll(key, value), text
+      (acc, [key, value]) => acc.replaceAll(key, value),
+      text
     );
   };
 
@@ -52,10 +53,10 @@ async function sendWelcomeOrLeave(member, type) {
   if (!channel) return;
 
   // For embed type: send embed, and optionally text
-  if (config[`${type}Type`] === 'embed' && config[`${type}EmbedName`]) {
+  if (config[`${type}Type`] === "embed" && config[`${type}EmbedName`]) {
     const embedDoc = await Embed.findOne({
       guildId: member.guild.id,
-      name: config[`${type}EmbedName`]
+      name: config[`${type}EmbedName`],
     });
     if (!embedDoc) return;
 
@@ -64,9 +65,9 @@ async function sendWelcomeOrLeave(member, type) {
     // Send both text and embed (together, like Mimu)
     if (config[`${type}Text`]) {
       const message = config[`${type}Text`]
-        .replaceAll('{user}', `<@${member.id}>`)
-        .replaceAll('{username}', member.user.username)
-        .replaceAll('{server}', member.guild.name);
+        .replaceAll("{user}", `<@${member.id}>`)
+        .replaceAll("{username}", member.user.username)
+        .replaceAll("{server}", member.guild.name);
 
       // Send both in ONE message (for classic Mimu look)
       await channel.send({ content: message, embeds: [embed] });
@@ -75,17 +76,16 @@ async function sendWelcomeOrLeave(member, type) {
       // Send as two messages (uncomment if you want this style):
       // await channel.send({ content: message });
       // await channel.send({ embeds: [embed] });
-
     } else {
       await channel.send({ embeds: [embed] });
     }
   }
   // For text type: just send the text
-  else if (config[`${type}Type`] === 'text' && config[`${type}Text`]) {
+  else if (config[`${type}Type`] === "text" && config[`${type}Text`]) {
     const message = config[`${type}Text`]
-      .replaceAll('{user}', `<@${member.id}>`)
-      .replaceAll('{username}', member.user.username)
-      .replaceAll('{server}', member.guild.name);
+      .replaceAll("{user}", `<@${member.id}>`)
+      .replaceAll("{username}", member.user.username)
+      .replaceAll("{server}", member.guild.name);
     await channel.send({ content: message });
   }
 }

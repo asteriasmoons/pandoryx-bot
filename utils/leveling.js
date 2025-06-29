@@ -1,10 +1,10 @@
 // utils/leveling.js
-const { EmbedBuilder } = require('discord.js');
-const UserLevel = require('../models/UserLevel');
-const GuildConfig = require('../models/GuildConfig');
+const { EmbedBuilder } = require("discord.js");
+const UserLevel = require("../models/UserLevel");
+const GuildConfig = require("../models/GuildConfig");
 
 const DEFAULT_THRESHOLDS = [0, 5, 10, 20, 40, 60, 80, 120, 180, 220];
-const DEFAULT_LVLUP = '<@{userId}> leveled up to **Level {level}**! 🎉';
+const DEFAULT_LVLUP = "<@{userId}> leveled up to **Level {level}**! 🎉";
 
 async function handleLeveling(message) {
   // Ignore bots or DMs
@@ -15,7 +15,12 @@ async function handleLeveling(message) {
 
   let userData = await UserLevel.findOne({ guildId, userId });
   if (!userData) {
-    userData = await UserLevel.create({ guildId, userId, messages: 0, level: 0 });
+    userData = await UserLevel.create({
+      guildId,
+      userId,
+      messages: 0,
+      level: 0,
+    });
   }
 
   const config = await GuildConfig.findOne({ guildId });
@@ -37,26 +42,28 @@ async function handleLeveling(message) {
     // --- Build custom level-up message ---
     const template = config?.levelUpMessage || DEFAULT_LVLUP;
     const levelUpText = template
-      .replaceAll('{userId}', userId)
-      .replaceAll('{level}', newLevel)
-      .replaceAll('{username}', message.author.username)
-      .replaceAll('{mention}', `<@${userId}>`);
+      .replaceAll("{userId}", userId)
+      .replaceAll("{level}", newLevel)
+      .replaceAll("{username}", message.author.username)
+      .replaceAll("{mention}", `<@${userId}>`);
 
     // Level up announcement as embed
     const levelEmbed = new EmbedBuilder()
       .setColor(0x663399)
-      .setTitle('Level Up!')
+      .setTitle("Level Up!")
       .setDescription(levelUpText)
-      .addFields(
-        { name: 'Total Messages', value: `${userData.messages}`, inline: true }
-      )
+      .addFields({
+        name: "Total Messages",
+        value: `${userData.messages}`,
+        inline: true,
+      })
       .setTimestamp()
       .setThumbnail(message.author.displayAvatarURL?.());
 
     await message.channel.send({ embeds: [levelEmbed] });
 
     // Reward role
-    const rewardRole = config?.levelRoles?.find(r => r.level === newLevel);
+    const rewardRole = config?.levelRoles?.find((r) => r.level === newLevel);
     if (rewardRole) {
       try {
         const member = await message.guild.members.fetch(userId);
@@ -70,7 +77,6 @@ async function handleLeveling(message) {
           )
           .setTimestamp();
         await message.channel.send({ embeds: [roleEmbed] });
-
       } catch (err) {
         console.error(`Could not assign level role:`, err);
       }
