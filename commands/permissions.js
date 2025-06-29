@@ -6,7 +6,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const CommandPermissions = require("../models/CommandPermissions");
-const { sendCommandGroupSelect } = require("../events/permissionMenus");
+const { sendCommandGroupSelect, sendResetGroupSelect } = require("../events/permissionMenus");
 
 // ⬇️ Your full commandGroups list (copied from permissionMenus.js)
 const commandGroups = {
