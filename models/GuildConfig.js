@@ -1,26 +1,26 @@
 // models/GuildConfig.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const GuildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   levelThresholds: {
     type: [Number],
-    default: [0, 5, 10, 20, 40, 60, 80, 120, 180, 220]
+    default: [0, 5, 10, 20, 40, 60, 80, 120, 180, 220],
   },
   levelRoles: {
     type: [
       {
         level: { type: Number, required: true },
-        roleId: { type: String, required: true }
-      }
+        roleId: { type: String, required: true },
+      },
     ],
-    default: []
+    default: [],
   },
   // Add to your GuildConfigSchema:
-levelUpMessage: {
-  type: String,
-  default: '<@{userId}> leveled up to **Level {level}**! 🎉'
-}
+  levelUpMessage: {
+    type: String,
+    default: "<@{userId}> leveled up to **Level {level}**! 🎉",
+  },
 });
 
-module.exports = mongoose.model('GuildConfig', GuildConfigSchema);
+module.exports = mongoose.model("GuildConfig", GuildConfigSchema);

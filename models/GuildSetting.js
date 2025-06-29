@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const GuildSettingsSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
@@ -7,4 +7,4 @@ const GuildSettingsSchema = new mongoose.Schema({
   // Add more settings as needed
 });
 
-module.exports = mongoose.model('GuildSettings', GuildSettingsSchema);
+module.exports = mongoose.model("GuildSettings", GuildSettingsSchema);

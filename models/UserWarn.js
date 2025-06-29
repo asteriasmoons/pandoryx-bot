@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userWarnSchema = new mongoose.Schema({
   userId: { type: String, required: true },
@@ -7,9 +7,9 @@ const userWarnSchema = new mongoose.Schema({
     {
       reason: String,
       moderatorId: String,
-      timestamp: { type: Date, default: Date.now }
-    }
-  ]
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
 });
 
-module.exports = mongoose.model('UserWarn', userWarnSchema);
+module.exports = mongoose.model("UserWarn", userWarnSchema);

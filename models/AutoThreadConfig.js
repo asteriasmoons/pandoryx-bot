@@ -1,5 +1,5 @@
 // models/AutoThreadConfig.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * Schema for the per-channel embed configuration
@@ -7,20 +7,23 @@ const mongoose = require('mongoose');
  * - description: The body/description of the embed (optional)
  * - color:    The color of the embed in HEX (optional, defaults to Discord blurple)
  */
-const EmbedConfigSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    default: '', // If no title is set, leave blank
+const EmbedConfigSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      default: "", // If no title is set, leave blank
+    },
+    description: {
+      type: String,
+      default: "", // If no description is set, leave blank
+    },
+    color: {
+      type: String,
+      default: "#5865F2", // Discord's blurple color as fallback
+    },
   },
-  description: {
-    type: String,
-    default: '', // If no description is set, leave blank
-  },
-  color: {
-    type: String,
-    default: '#5865F2', // Discord's blurple color as fallback
-  },
-}, { _id: false }); // _id: false so these aren't separate subdocs in Mongo
+  { _id: false }
+); // _id: false so these aren't separate subdocs in Mongo
 
 /**
  * Schema for the per-channel configuration object
@@ -28,21 +31,24 @@ const EmbedConfigSchema = new mongoose.Schema({
  * - embed:              The embed config for the thread created in this channel
  * - threadNameTemplate: Optional template string for thread names (e.g. "Thread for {user}")
  */
-const ChannelConfigSchema = new mongoose.Schema({
-  channelId: {
-    type: String,
-    required: true, // Every channel config must specify a channel ID
+const ChannelConfigSchema = new mongoose.Schema(
+  {
+    channelId: {
+      type: String,
+      required: true, // Every channel config must specify a channel ID
+    },
+    embed: {
+      type: EmbedConfigSchema,
+      default: () => ({}), // By default, use blank embed config (will fallback to default values)
+    },
+    threadNameTemplate: {
+      type: String,
+      default: "Thread for {user}", // Default thread naming template
+      // You can use {user} and {message} as variables in the template (see implementation)
+    },
   },
-  embed: {
-    type: EmbedConfigSchema,
-    default: () => ({}), // By default, use blank embed config (will fallback to default values)
-  },
-  threadNameTemplate: {
-    type: String,
-    default: 'Thread for {user}', // Default thread naming template
-    // You can use {user} and {message} as variables in the template (see implementation)
-  },
-}, { _id: false }); // Prevents Mongoose from creating _id for array subdocs
+  { _id: false }
+); // Prevents Mongoose from creating _id for array subdocs
 
 /**
  * Main schema for AutoThread configuration per guild
@@ -63,7 +69,7 @@ const AutoThreadConfigSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true, // Only ONE config doc per guild/server!
-    index: true,  // Makes querying by guildId efficient
+    index: true, // Makes querying by guildId efficient
   },
   channels: {
     type: [ChannelConfigSchema],
@@ -79,4 +85,4 @@ const AutoThreadConfigSchema = new mongoose.Schema({
 });
 
 // Export the schema as a Mongoose model
-module.exports = mongoose.model('AutoThreadConfig', AutoThreadConfigSchema);
+module.exports = mongoose.model("AutoThreadConfig", AutoThreadConfigSchema);

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const ReactionRoleMessageSchema = new Schema({
@@ -9,4 +9,7 @@ const ReactionRoleMessageSchema = new Schema({
   emojiRoleMap: { type: Schema.Types.Mixed, default: {} }, // <--- USE THIS
 });
 
-module.exports = mongoose.model('ReactionRoleMessage', ReactionRoleMessageSchema);
+module.exports = mongoose.model(
+  "ReactionRoleMessage",
+  ReactionRoleMessageSchema
+);

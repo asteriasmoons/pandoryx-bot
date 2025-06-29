@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const LogConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
@@ -19,8 +19,8 @@ const LogConfigSchema = new mongoose.Schema({
     warn: { type: String, default: null },
     timeout: { type: String, default: null },
     ban: { type: String, default: null },
-    kick: { type: String, default: null }
-  }
+    kick: { type: String, default: null },
+  },
 });
 
-module.exports = mongoose.model('LogConfig', LogConfigSchema);
+module.exports = mongoose.model("LogConfig", LogConfigSchema);
