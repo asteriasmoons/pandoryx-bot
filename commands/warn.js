@@ -1,72 +1,96 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const UserWarn = require('../models/UserWarn');
-const LogConfig = require('../models/LogConfig'); // <- Add this!
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
+const UserWarn = require("../models/UserWarn");
+const LogConfig = require("../models/LogConfig"); // <- Add this!
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('warn')
-    .setDescription('Warn users and manage warnings')
-    .addSubcommand(sub =>
+    .setName("warn")
+    .setDescription("Warn users and manage warnings")
+    .addSubcommand((sub) =>
       sub
-        .setName('add')
-        .setDescription('Warn a user')
-        .addUserOption(opt =>
-          opt.setName('user').setDescription('User to warn').setRequired(true)
+        .setName("add")
+        .setDescription("Warn a user")
+        .addUserOption((opt) =>
+          opt.setName("user").setDescription("User to warn").setRequired(true)
         )
-        .addStringOption(opt =>
-          opt.setName('reason').setDescription('Reason for warning').setRequired(true)
+        .addStringOption((opt) =>
+          opt
+            .setName("reason")
+            .setDescription("Reason for warning")
+            .setRequired(true)
         )
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
-        .setName('view')
-        .setDescription('View warnings for a user')
-        .addUserOption(opt =>
-          opt.setName('user').setDescription('User to view warnings for').setRequired(true)
+        .setName("view")
+        .setDescription("View warnings for a user")
+        .addUserOption((opt) =>
+          opt
+            .setName("user")
+            .setDescription("User to view warnings for")
+            .setRequired(true)
         )
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
-        .setName('remove')
-        .setDescription('Remove a warning from a user')
-        .addUserOption(opt =>
-          opt.setName('user').setDescription('User to remove warning from').setRequired(true)
+        .setName("remove")
+        .setDescription("Remove a warning from a user")
+        .addUserOption((opt) =>
+          opt
+            .setName("user")
+            .setDescription("User to remove warning from")
+            .setRequired(true)
         )
-        .addIntegerOption(opt =>
-          opt.setName('number').setDescription('Warning number to remove (as shown in view)').setRequired(true)
+        .addIntegerOption((opt) =>
+          opt
+            .setName("number")
+            .setDescription("Warning number to remove (as shown in view)")
+            .setRequired(true)
         )
     ),
   async execute(interaction) {
     // Admin-only check
-    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    if (
+      !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+    ) {
       const embed = new EmbedBuilder()
-        .setTitle('Permission Denied')
-        .setDescription('You must have the **Administrator** permission to use this command.')
+        .setTitle("Permission Denied")
+        .setDescription(
+          "You must have the **Administrator** permission to use this command."
+        )
         .setColor(0xff4fa6);
       await interaction.reply({ embeds: [embed], ephemeral: false });
       return;
     }
 
     const sub = interaction.options.getSubcommand();
-    const user = interaction.options.getUser('user');
+    const user = interaction.options.getUser("user");
     const guildId = interaction.guild.id;
 
-    if (sub === 'add') {
-      const reason = interaction.options.getString('reason');
+    if (sub === "add") {
+      const reason = interaction.options.getString("reason");
       let userWarns = await UserWarn.findOne({ userId: user.id, guildId });
       if (!userWarns) {
         userWarns = new UserWarn({ userId: user.id, guildId, warns: [] });
       }
-      userWarns.warns.push({ reason, moderatorId: interaction.user.id, timestamp: new Date() });
+      userWarns.warns.push({
+        reason,
+        moderatorId: interaction.user.id,
+        timestamp: new Date(),
+      });
       await userWarns.save();
 
       // Prepare admin reply embed
       const embed = new EmbedBuilder()
-        .setTitle('User Warned')
+        .setTitle("User Warned")
         .setDescription(`<@${user.id}> has been warned!`)
         .addFields(
-          { name: 'Reason', value: reason },
-          { name: 'Moderator', value: `<@${interaction.user.id}>` }
+          { name: "Reason", value: reason },
+          { name: "Moderator", value: `<@${interaction.user.id}>` }
         )
         .setColor(0xff4fa6)
         .setTimestamp();
@@ -79,15 +103,17 @@ module.exports = {
         await user.send({
           embeds: [
             new EmbedBuilder()
-              .setTitle('You have been warned')
-              .setDescription(`You were warned in **${interaction.guild.name}**`)
+              .setTitle("You have been warned")
+              .setDescription(
+                `You were warned in **${interaction.guild.name}**`
+              )
               .addFields(
-                { name: 'Reason', value: reason },
-                { name: 'Moderator', value: `<@${interaction.user.id}>` }
+                { name: "Reason", value: reason },
+                { name: "Moderator", value: `<@${interaction.user.id}>` }
               )
               .setColor(0xff4fa6)
-              .setTimestamp()
-          ]
+              .setTimestamp(),
+          ],
         });
       } catch (err) {
         // Optionally log DM failures here
@@ -96,15 +122,25 @@ module.exports = {
       // === LOG TO LOG CHANNEL ===
       const logConfig = await LogConfig.findOne({ guildId });
       if (logConfig?.logs?.warn) {
-        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.warn);
+        const logChannel = interaction.guild.channels.cache.get(
+          logConfig.logs.warn
+        );
         if (logChannel) {
           const logEmbed = new EmbedBuilder()
             .setColor(0xff4fa6)
-            .setTitle('⚠️ Member Warned')
+            .setTitle("⚠️ Member Warned")
             .addFields(
-              { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
-              { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
-              { name: 'Reason', value: reason, inline: false }
+              {
+                name: "User",
+                value: `<@${user.id}> (${user.tag})`,
+                inline: true,
+              },
+              {
+                name: "Moderator",
+                value: `<@${interaction.user.id}>`,
+                inline: true,
+              },
+              { name: "Reason", value: reason, inline: false }
             )
             .setTimestamp();
           logChannel.send({ embeds: [logEmbed] }).catch(() => {});
@@ -112,7 +148,7 @@ module.exports = {
       }
     }
 
-    if (sub === 'view') {
+    if (sub === "view") {
       const userWarns = await UserWarn.findOne({ userId: user.id, guildId });
       const embed = new EmbedBuilder()
         .setTitle(`Warnings for ${user.tag}`)
@@ -120,30 +156,32 @@ module.exports = {
         .setThumbnail(user.displayAvatarURL());
 
       if (!userWarns || userWarns.warns.length === 0) {
-        embed.setDescription('No warnings found for this user.');
+        embed.setDescription("No warnings found for this user.");
       } else {
         embed.setDescription(
           userWarns.warns
             .map(
               (w, i) =>
-                `**#${i + 1}** - ${w.reason}\n*by <@${w.moderatorId}> on <t:${Math.floor(
+                `**#${i + 1}** - ${w.reason}\n*by <@${
+                  w.moderatorId
+                }> on <t:${Math.floor(
                   new Date(w.timestamp || Date.now()).getTime() / 1000
                 )}:d>*`
             )
-            .join('\n\n')
+            .join("\n\n")
         );
       }
       await interaction.reply({ embeds: [embed], ephemeral: false });
     }
 
-    if (sub === 'remove') {
-      const number = interaction.options.getInteger('number');
+    if (sub === "remove") {
+      const number = interaction.options.getInteger("number");
       const userWarns = await UserWarn.findOne({ userId: user.id, guildId });
 
       if (!userWarns || userWarns.warns.length < number || number < 1) {
         const embed = new EmbedBuilder()
-          .setTitle('Error')
-          .setDescription('Invalid warning number.')
+          .setTitle("Error")
+          .setDescription("Invalid warning number.")
           .setColor(0xff4fa6);
         await interaction.reply({ embeds: [embed], ephemeral: false });
         return;
@@ -153,11 +191,11 @@ module.exports = {
       await userWarns.save();
 
       const embed = new EmbedBuilder()
-        .setTitle('Warning Removed')
+        .setTitle("Warning Removed")
         .setDescription(`Removed warning #${number} from <@${user.id}>:`)
         .addFields(
-          { name: 'Reason', value: removed[0].reason },
-          { name: 'Moderator', value: `<@${removed[0].moderatorId}>` }
+          { name: "Reason", value: removed[0].reason },
+          { name: "Moderator", value: `<@${removed[0].moderatorId}>` }
         )
         .setColor(0xff4fa6)
         .setTimestamp();
@@ -167,21 +205,31 @@ module.exports = {
       // === LOG REMOVAL TO LOG CHANNEL ===
       const logConfig = await LogConfig.findOne({ guildId });
       if (logConfig?.logs?.warn) {
-        const logChannel = interaction.guild.channels.cache.get(logConfig.logs.warn);
+        const logChannel = interaction.guild.channels.cache.get(
+          logConfig.logs.warn
+        );
         if (logChannel) {
           const logEmbed = new EmbedBuilder()
             .setColor(0xff4fa6)
-            .setTitle('⚠️ Warning Removed')
+            .setTitle("⚠️ Warning Removed")
             .addFields(
-              { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
-              { name: 'Moderator', value: `<@${removed[0].moderatorId}>`, inline: true },
-              { name: 'Reason', value: removed[0].reason, inline: false },
-              { name: 'Warning #', value: `${number}`, inline: true }
+              {
+                name: "User",
+                value: `<@${user.id}> (${user.tag})`,
+                inline: true,
+              },
+              {
+                name: "Moderator",
+                value: `<@${removed[0].moderatorId}>`,
+                inline: true,
+              },
+              { name: "Reason", value: removed[0].reason, inline: false },
+              { name: "Warning #", value: `${number}`, inline: true }
             )
             .setTimestamp();
           logChannel.send({ embeds: [logEmbed] }).catch(() => {});
         }
       }
     }
-  }
+  },
 };

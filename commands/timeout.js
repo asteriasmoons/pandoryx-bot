@@ -1,38 +1,64 @@
 // commands/timeout.js
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const TimeoutCase = require('../models/TimeoutCase');
-const LogConfig = require('../models/LogConfig'); // <-- Add this
+const {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  EmbedBuilder,
+} = require("discord.js");
+const TimeoutCase = require("../models/TimeoutCase");
+const LogConfig = require("../models/LogConfig"); // <-- Add this
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('timeout')
-    .setDescription('Timeout management commands')
+    .setName("timeout")
+    .setDescription("Timeout management commands")
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
-        .setName('add')
-        .setDescription('Timeout a member')
-        .addUserOption(o => o.setName('user').setDescription('User to timeout').setRequired(true))
-        .addIntegerOption(o => o.setName('minutes').setDescription('Timeout duration (minutes)').setRequired(true))
-        .addStringOption(o => o.setName('reason').setDescription('Reason for timeout').setRequired(true))
+        .setName("add")
+        .setDescription("Timeout a member")
+        .addUserOption((o) =>
+          o.setName("user").setDescription("User to timeout").setRequired(true)
+        )
+        .addIntegerOption((o) =>
+          o
+            .setName("minutes")
+            .setDescription("Timeout duration (minutes)")
+            .setRequired(true)
+        )
+        .addStringOption((o) =>
+          o
+            .setName("reason")
+            .setDescription("Reason for timeout")
+            .setRequired(true)
+        )
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
-        .setName('remove')
-        .setDescription('Remove a timeout from a member')
-        .addUserOption(o => o.setName('user').setDescription('User to untimeout').setRequired(true))
-        .addStringOption(o => o.setName('reason').setDescription('Reason for removing timeout').setRequired(false))
+        .setName("remove")
+        .setDescription("Remove a timeout from a member")
+        .addUserOption((o) =>
+          o
+            .setName("user")
+            .setDescription("User to untimeout")
+            .setRequired(true)
+        )
+        .addStringOption((o) =>
+          o
+            .setName("reason")
+            .setDescription("Reason for removing timeout")
+            .setRequired(false)
+        )
     )
-    .addSubcommand(sub =>
-      sub
-        .setName('list')
-        .setDescription('List all timeouts in this server')
+    .addSubcommand((sub) =>
+      sub.setName("list").setDescription("List all timeouts in this server")
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
-        .setName('view')
-        .setDescription('View a specific timeout case')
-        .addIntegerOption(o => o.setName('case').setDescription('Case number').setRequired(true))
+        .setName("view")
+        .setDescription("View a specific timeout case")
+        .addIntegerOption((o) =>
+          o.setName("case").setDescription("Case number").setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -42,7 +68,7 @@ module.exports = {
     // Helper for error embeds
     function errorEmbed(msg) {
       return new EmbedBuilder()
-        .setTitle('Error')
+        .setTitle("Error")
         .setDescription(msg)
         .setColor(0xff8102);
     }
@@ -50,24 +76,30 @@ module.exports = {
     // Helper for success embeds
     function successEmbed(msg) {
       return new EmbedBuilder()
-        .setTitle('Success')
+        .setTitle("Success")
         .setDescription(msg)
         .setColor(0xff8102);
     }
 
-    if (sub === 'add') {
-      const user = interaction.options.getUser('user');
-      const minutes = interaction.options.getInteger('minutes');
-      const reason = interaction.options.getString('reason');
+    if (sub === "add") {
+      const user = interaction.options.getUser("user");
+      const minutes = interaction.options.getInteger("minutes");
+      const reason = interaction.options.getString("reason");
       let member;
       try {
         member = await interaction.guild.members.fetch(user.id);
       } catch {
-        return interaction.reply({ embeds: [errorEmbed('Could not find that member in this server.')], ephemeral: false });
+        return interaction.reply({
+          embeds: [errorEmbed("Could not find that member in this server.")],
+          ephemeral: false,
+        });
       }
 
       if (!member.moderatable) {
-        return interaction.reply({ embeds: [errorEmbed('I cannot timeout this member.')], ephemeral: false });
+        return interaction.reply({
+          embeds: [errorEmbed("I cannot timeout this member.")],
+          ephemeral: false,
+        });
       }
 
       try {
@@ -84,14 +116,26 @@ module.exports = {
         });
 
         const embed = new EmbedBuilder()
-          .setTitle('Member Timed Out')
+          .setTitle("Member Timed Out")
           .setColor(0xff8102)
           .addFields(
-            { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
-            { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
-            { name: 'Duration', value: `${minutes} minutes`, inline: true },
-            { name: 'Reason', value: reason, inline: false },
-            { name: 'Case #', value: timeoutCase.caseNumber?.toString() ?? 'N/A', inline: true }
+            {
+              name: "User",
+              value: `${user.tag} (<@${user.id}>)`,
+              inline: true,
+            },
+            {
+              name: "Moderator",
+              value: `<@${interaction.user.id}>`,
+              inline: true,
+            },
+            { name: "Duration", value: `${minutes} minutes`, inline: true },
+            { name: "Reason", value: reason, inline: false },
+            {
+              name: "Case #",
+              value: timeoutCase.caseNumber?.toString() ?? "N/A",
+              inline: true,
+            }
           )
           .setTimestamp();
         await interaction.reply({ embeds: [embed] });
@@ -99,48 +143,80 @@ module.exports = {
         // === LOG TO LOG CHANNEL ===
         const logConfig = await LogConfig.findOne({ guildId });
         if (logConfig?.logs?.timeout) {
-          const logChannel = interaction.guild.channels.cache.get(logConfig.logs.timeout);
+          const logChannel = interaction.guild.channels.cache.get(
+            logConfig.logs.timeout
+          );
           if (logChannel) {
             const logEmbed = new EmbedBuilder()
               .setColor(0xff8102)
-              .setTitle('⏳ Member Timed Out')
+              .setTitle("⏳ Member Timed Out")
               .addFields(
-                { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
-                { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
-                { name: 'Duration', value: `${minutes} minutes`, inline: true },
-                { name: 'Reason', value: reason, inline: false },
-                { name: 'Case #', value: timeoutCase.caseNumber?.toString() ?? 'N/A', inline: true }
+                {
+                  name: "User",
+                  value: `<@${user.id}> (${user.tag})`,
+                  inline: true,
+                },
+                {
+                  name: "Moderator",
+                  value: `<@${interaction.user.id}>`,
+                  inline: true,
+                },
+                { name: "Duration", value: `${minutes} minutes`, inline: true },
+                { name: "Reason", value: reason, inline: false },
+                {
+                  name: "Case #",
+                  value: timeoutCase.caseNumber?.toString() ?? "N/A",
+                  inline: true,
+                }
               )
               .setTimestamp();
             logChannel.send({ embeds: [logEmbed] }).catch(() => {});
           }
         }
-
       } catch (err) {
         console.error(err);
-        return interaction.reply({ embeds: [errorEmbed('Failed to timeout member. Make sure I have the correct permissions and role position.')], ephemeral: false });
+        return interaction.reply({
+          embeds: [
+            errorEmbed(
+              "Failed to timeout member. Make sure I have the correct permissions and role position."
+            ),
+          ],
+          ephemeral: false,
+        });
       }
     }
 
-    if (sub === 'remove') {
-      const user = interaction.options.getUser('user');
-      const reason = interaction.options.getString('reason') || 'No reason provided';
+    if (sub === "remove") {
+      const user = interaction.options.getUser("user");
+      const reason =
+        interaction.options.getString("reason") || "No reason provided";
       let member;
       try {
         member = await interaction.guild.members.fetch(user.id);
       } catch {
-        return interaction.reply({ embeds: [errorEmbed('Could not find that member in this server.')], ephemeral: false });
+        return interaction.reply({
+          embeds: [errorEmbed("Could not find that member in this server.")],
+          ephemeral: false,
+        });
       }
 
       try {
         await member.timeout(null, reason); // Remove timeout
         const embed = new EmbedBuilder()
-          .setTitle('Timeout Removed')
+          .setTitle("Timeout Removed")
           .setColor(0xff8102)
           .addFields(
-            { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
-            { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
-            { name: 'Reason', value: reason, inline: false }
+            {
+              name: "User",
+              value: `${user.tag} (<@${user.id}>)`,
+              inline: true,
+            },
+            {
+              name: "Moderator",
+              value: `<@${interaction.user.id}>`,
+              inline: true,
+            },
+            { name: "Reason", value: reason, inline: false }
           )
           .setTimestamp();
         await interaction.reply({ embeds: [embed] });
@@ -148,34 +224,54 @@ module.exports = {
         // === LOG TO LOG CHANNEL ===
         const logConfig = await LogConfig.findOne({ guildId });
         if (logConfig?.logs?.timeout) {
-          const logChannel = interaction.guild.channels.cache.get(logConfig.logs.timeout);
+          const logChannel = interaction.guild.channels.cache.get(
+            logConfig.logs.timeout
+          );
           if (logChannel) {
             const logEmbed = new EmbedBuilder()
               .setColor(0xff8102)
-              .setTitle('🔓 Timeout Removed')
+              .setTitle("🔓 Timeout Removed")
               .addFields(
-                { name: 'User', value: `<@${user.id}> (${user.tag})`, inline: true },
-                { name: 'Moderator', value: `<@${interaction.user.id}>`, inline: true },
-                { name: 'Reason', value: reason, inline: false }
+                {
+                  name: "User",
+                  value: `<@${user.id}> (${user.tag})`,
+                  inline: true,
+                },
+                {
+                  name: "Moderator",
+                  value: `<@${interaction.user.id}>`,
+                  inline: true,
+                },
+                { name: "Reason", value: reason, inline: false }
               )
               .setTimestamp();
             logChannel.send({ embeds: [logEmbed] }).catch(() => {});
           }
         }
-
       } catch (err) {
         console.error(err);
-        return interaction.reply({ embeds: [errorEmbed('Failed to remove timeout. Make sure I have the correct permissions and role position.')], ephemeral: true });
+        return interaction.reply({
+          embeds: [
+            errorEmbed(
+              "Failed to remove timeout. Make sure I have the correct permissions and role position."
+            ),
+          ],
+          ephemeral: true,
+        });
       }
     }
 
-    if (sub === 'list') {
-      const cases = await TimeoutCase.find({ guildId }).sort({ timestamp: -1 }).limit(10);
+    if (sub === "list") {
+      const cases = await TimeoutCase.find({ guildId })
+        .sort({ timestamp: -1 })
+        .limit(10);
       if (!cases.length) {
-        return interaction.reply({ embeds: [errorEmbed('No timeouts found in this server.')] });
+        return interaction.reply({
+          embeds: [errorEmbed("No timeouts found in this server.")],
+        });
       }
       const embed = new EmbedBuilder()
-        .setTitle('Timeout Cases')
+        .setTitle("Timeout Cases")
         .setColor(0xff8102)
         .setTimestamp();
       for (const c of cases) {
@@ -186,31 +282,49 @@ module.exports = {
             `Moderator: <@${c.moderatorId}>`,
             `Duration: ${c.duration} min`,
             `Reason: ${c.reason}`,
-            `Time: <t:${Math.floor(c.timestamp / 1000)}:F>`
-          ].join('\n'),
-          inline: false
+            `Time: <t:${Math.floor(c.timestamp / 1000)}:F>`,
+          ].join("\n"),
+          inline: false,
         });
       }
       return interaction.reply({ embeds: [embed] });
     }
 
-    if (sub === 'view') {
-      const caseNumber = interaction.options.getInteger('case');
+    if (sub === "view") {
+      const caseNumber = interaction.options.getInteger("case");
       const timeoutCase = await TimeoutCase.findOne({ guildId, caseNumber });
       if (!timeoutCase) {
-        return interaction.reply({ embeds: [errorEmbed('Timeout case not found.')] });
+        return interaction.reply({
+          embeds: [errorEmbed("Timeout case not found.")],
+        });
       }
       const embed = new EmbedBuilder()
         .setTitle(`Timeout Case #${timeoutCase.caseNumber}`)
         .setColor(0xff8102)
         .addFields(
-          { name: 'User', value: `<@${timeoutCase.userId}> (${timeoutCase.userId})`, inline: true },
-          { name: 'Moderator', value: `<@${timeoutCase.moderatorId}>`, inline: true },
-          { name: 'Duration', value: `${timeoutCase.duration} minutes`, inline: true },
-          { name: 'Reason', value: timeoutCase.reason, inline: false },
-          { name: 'Timestamp', value: `<t:${Math.floor(timeoutCase.timestamp / 1000)}:F>`, inline: false }
+          {
+            name: "User",
+            value: `<@${timeoutCase.userId}> (${timeoutCase.userId})`,
+            inline: true,
+          },
+          {
+            name: "Moderator",
+            value: `<@${timeoutCase.moderatorId}>`,
+            inline: true,
+          },
+          {
+            name: "Duration",
+            value: `${timeoutCase.duration} minutes`,
+            inline: true,
+          },
+          { name: "Reason", value: timeoutCase.reason, inline: false },
+          {
+            name: "Timestamp",
+            value: `<t:${Math.floor(timeoutCase.timestamp / 1000)}:F>`,
+            inline: false,
+          }
         );
       return interaction.reply({ embeds: [embed] });
     }
-  }
+  },
 };
