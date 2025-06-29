@@ -107,7 +107,6 @@ const groupLabels = {
   verification: "Verification",
 };
 
-// ✅ Helper to format "note.add" → "Note › Add"
 function formatCommandLabel(cmd) {
   return cmd
     .split(".")
@@ -115,7 +114,7 @@ function formatCommandLabel(cmd) {
     .join(" ");
 }
 
-// Step 1: Show command group select
+// [Set flow] Show group select
 async function sendCommandGroupSelect(interaction) {
   const select = new StringSelectMenuBuilder()
     .setCustomId("perm_group_select")
@@ -126,92 +125,119 @@ async function sendCommandGroupSelect(interaction) {
         value: group,
       }))
     );
-
   const row = new ActionRowBuilder().addComponents(select);
-
   const embed = new EmbedBuilder()
     .setTitle("Set Permissions")
     .setDescription("Select a command group to begin")
     .setColor(0x2f3136);
-
-  await interaction.reply({
-    embeds: [embed],
-    components: [row],
-    ephemeral: true,
-  });
+  await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
 }
 
-// Step 2: Handle command group select
+// [Set flow] Handle group select
 async function handleGroupSelect(interaction) {
   const group = interaction.values[0];
   const commands = commandGroups[group];
-
   const select = new StringSelectMenuBuilder()
     .setCustomId(`perm_command_select:${group}`)
     .setPlaceholder("Select a command")
     .addOptions(
       commands.map((cmd) => ({
-        label: formatCommandLabel(cmd), // 👈 updated label
+        label: formatCommandLabel(cmd),
         value: cmd,
       }))
     );
-
   const row = new ActionRowBuilder().addComponents(select);
-
   const embed = new EmbedBuilder()
     .setTitle(`Group: ${groupLabels[group] || group}`)
-    .setDescription(
-      "Now select the specific command you want to set permissions for."
-    )
+    .setDescription("Now select the specific command you want to set permissions for.")
     .setColor(0x2f3136);
-
   await interaction.update({ embeds: [embed], components: [row] });
 }
 
-// Step 3: Handle command select
+// [Set flow] Handle command select
 async function handleCommandSelect(interaction) {
   const command = interaction.values[0];
-
   const roleSelect = new RoleSelectMenuBuilder()
     .setCustomId(`perm_role_select:${command}`)
     .setPlaceholder("Select role(s) allowed to use this command")
     .setMinValues(1)
     .setMaxValues(5);
-
   const row = new ActionRowBuilder().addComponents(roleSelect);
-
   const embed = new EmbedBuilder()
     .setTitle(`Command: \`${formatCommandLabel(command)}\``)
-    .setDescription(
-      "Select one or more roles that should be allowed to use this command."
-    )
+    .setDescription("Select one or more roles that should be allowed to use this command.")
     .setColor(0x2f3136);
-
   await interaction.update({ embeds: [embed], components: [row] });
 }
 
-// Step 4: Handle role select and save to DB
+// [Set flow] Handle role select and save to DB
 async function handleRoleSelect(interaction) {
   const [_, command] = interaction.customId.split(":");
   const roleIds = interaction.values;
-
   await CommandPermissions.findOneAndUpdate(
     { guildId: interaction.guildId, command },
     { $set: { allowedRoles: roleIds } },
     { upsert: true }
   );
-
   const embed = new EmbedBuilder()
     .setTitle("✅ Permissions Updated")
-    .setDescription(
-      `Only the selected roles can now use \`${formatCommandLabel(command)}\`.`
-    )
+    .setDescription(`Only the selected roles can now use \`${formatCommandLabel(command)}\`.`)
     .addFields({
       name: "Allowed Roles",
       value: roleIds.map((r) => `<@&${r}>`).join(", "),
     })
     .setColor(0x2ecc71);
+  await interaction.update({ embeds: [embed], components: [] });
+}
 
+// [Reset flow] Show group select
+async function sendResetGroupSelect(interaction) {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId("perm_reset_group_select")
+    .setPlaceholder("Select a command group to reset from")
+    .addOptions(
+      Object.keys(commandGroups).map((group) => ({
+        label: groupLabels[group] || group,
+        value: group,
+      }))
+    );
+  const row = new ActionRowBuilder().addComponents(select);
+  const embed = new EmbedBuilder()
+    .setTitle("Reset Permissions")
+    .setDescription("Select a group to begin resetting permissions.")
+    .setColor(0x2f3136);
+  await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+}
+
+// [Reset flow] Handle group select
+async function handleResetGroupSelect(interaction) {
+  const group = interaction.values[0];
+  const commands = commandGroups[group];
+  const select = new StringSelectMenuBuilder()
+    .setCustomId(`perm_reset_command_select:${group}`)
+    .setPlaceholder("Select a command to reset")
+    .addOptions(
+      commands.map((cmd) => ({
+        label: formatCommandLabel(cmd),
+        value: cmd,
+      }))
+    );
+  const row = new ActionRowBuilder().addComponents(select);
+  const embed = new EmbedBuilder()
+    .setTitle(`Reset › ${groupLabels[group] || group}`)
+    .setDescription("Now select the command to remove all permission roles from.")
+    .setColor(0x2f3136);
+  await interaction.update({ embeds: [embed], components: [row] });
+}
+
+// [Reset flow] Handle reset command select
+async function handleResetCommandSelect(interaction) {
+  const [_, command] = interaction.customId.split(":");
+  await CommandPermissions.findOneAndDelete({ guildId: interaction.guildId, command });
+  const embed = new EmbedBuilder()
+    .setTitle("✅ Permissions Reset")
+    .setDescription(`\`${formatCommandLabel(command)}\` is now public. All restrictions have been cleared.`)
+    .setColor(0x2ecc71);
   await interaction.update({ embeds: [embed], components: [] });
 }
 
@@ -220,4 +246,9 @@ module.exports = {
   handleGroupSelect,
   handleCommandSelect,
   handleRoleSelect,
+  sendResetGroupSelect,
+  handleResetGroupSelect,
+  handleResetCommandSelect,
+  commandGroups,
+  groupLabels,
 };

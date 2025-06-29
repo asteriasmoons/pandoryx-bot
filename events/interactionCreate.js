@@ -2021,6 +2021,17 @@ module.exports = {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    // === RESET PERMISSIONS ===
+    if (interaction.customId === "perm_reset_group_select") {
+      const { handleResetGroupSelect } = require("../events/permissionMenus");
+      return handleResetGroupSelect(interaction);
+    }
+
+    if (interaction.customId.startsWith("perm_reset_command_select")) {
+      const { handleResetCommandSelect } = require("../events/permissionMenus");
+      return handleResetCommandSelect(interaction);
+    }
+
     // ==== AUTOTHREAD CONFIG LOGIC ====
     if (
       interaction.isChannelSelectMenu() &&
