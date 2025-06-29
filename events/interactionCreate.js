@@ -1956,6 +1956,7 @@ module.exports = {
 
     // ==== VIEW PERMISSIONS ====
     const CommandPermissions = require("../models/CommandPermissions");
+    const permissionMenus = require("../events/permissionMenus");
 
     function formatCommandLabel(cmd) {
       return cmd
@@ -2022,14 +2023,19 @@ module.exports = {
     }
 
     // === RESET PERMISSIONS ===
-    if (interaction.customId === "perm_reset_group_select") {
-      const { handleResetGroupSelect } = require("../events/permissionMenus");
-      return handleResetGroupSelect(interaction);
+    if (
+      interaction.isStringSelectMenu() &&
+      interaction.customId === "perm_reset_group_select"
+    ) {
+      return permissionMenus.handleResetGroupSelect(interaction);
     }
 
-    if (interaction.customId.startsWith("perm_reset_command_select")) {
-      const { handleResetCommandSelect } = require("../events/permissionMenus");
-      return handleResetCommandSelect(interaction);
+    if (
+      interaction.isStringSelectMenu() &&
+      typeof interaction.customId === "string" &&
+      interaction.customId.startsWith("perm_reset_command_select")
+    ) {
+      return permissionMenus.handleResetCommandSelect(interaction);
     }
 
     // ==== AUTOTHREAD CONFIG LOGIC ====
