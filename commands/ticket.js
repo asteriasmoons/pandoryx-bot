@@ -165,15 +165,26 @@ module.exports = {
         guildId,
         panelName: name,
       });
+
       if (!deleted) {
+        const notFoundEmbed = new EmbedBuilder()
+          .setTitle("Panel Not Found")
+          .setDescription(`No panel named \`${name}\` was found.`)
+          .setColor("#5103aa"); // Red
+
         return interaction.reply({
-          content: `No panel named \`${name}\` was found.`,
+          embeds: [notFoundEmbed],
           ephemeral: true,
         });
       }
 
+      const deletedEmbed = new EmbedBuilder()
+        .setTitle("Panel Deleted")
+        .setDescription(`Panel \`${name}\` has been deleted.`)
+        .setColor("#5103aa"); // Green
+
       return interaction.reply({
-        content: `Panel \`${name}\` deleted.`,
+        embeds: [deletedEmbed],
         ephemeral: true,
       });
     }
@@ -182,16 +193,27 @@ module.exports = {
     if (sub === "list") {
       const panels = await TicketPanel.find({ guildId });
       if (!panels.length) {
+        // No panels found - use an embed for consistency!
+        const noPanelsEmbed = new EmbedBuilder()
+          .setTitle("No Ticket Panels Found")
+          .setDescription(
+            "There are no ticket panels configured for this server."
+          )
+          .setColor("#5103aa"); // Red (or your preferred color)
         return interaction.reply({
-          content: "No ticket panels found for this server.",
+          embeds: [noPanelsEmbed],
           ephemeral: true,
         });
       }
 
       const panelList = panels.map((p) => `• \`${p.panelName}\``).join("\n");
+      const listEmbed = new EmbedBuilder()
+        .setTitle("Ticket Panels")
+        .setDescription(panelList)
+        .setColor("#5103aa"); // Discord blurple, or your preferred color
 
       return interaction.reply({
-        content: `**Ticket Panels:**\n${panelList}`,
+        embeds: [listEmbed],
         ephemeral: true,
       });
     }
