@@ -142,22 +142,8 @@ module.exports = {
     }
 
     if (sub === "reset") {
-      const result = await CommandPermissions.deleteMany({
-        guildId: interaction.guildId,
-      });
-
-      const embed = new EmbedBuilder()
-        .setTitle("🔄 Permissions Reset")
-        .setDescription(
-          `All command-specific permission overrides have been removed.\nCommands are now **public** unless otherwise restricted.`
-        )
-        .setColor(0x57f287)
-        .addFields({
-          name: "Entries Deleted",
-          value: `${result.deletedCount}`,
-        });
-
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      // 🟢 Launch interactive reset flow (group ➜ command ➜ reset)
+      return sendResetGroupSelect(interaction);
     }
   },
 };
