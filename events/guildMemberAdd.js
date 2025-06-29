@@ -1,11 +1,11 @@
-const Autorole = require('../models/Autorole');
-const UserKick = require('../models/UserKick');
-const modLogger = require('../modLogger');
-const sendWelcomeOrLeave = require('../utils/sendWelcomeLeave'); // NEW!
+const Autorole = require("../models/Autorole");
+const UserKick = require("../models/UserKick");
+const modLogger = require("../modLogger");
+const sendWelcomeOrLeave = require("../utils/sendWelcomeLeave"); // NEW!
 
 module.exports = (client) => {
   // Member JOIN
-  client.on('guildMemberAdd', async (member) => {
+  client.on("guildMemberAdd", async (member) => {
     console.log(`${member.user.tag} joined the server!`);
 
     // Autorole logic
@@ -15,7 +15,7 @@ module.exports = (client) => {
         for (const roleId of data.roleIds) {
           const role = member.guild.roles.cache.get(roleId);
           if (role) {
-            await member.roles.add(role, 'Autorole on join');
+            await member.roles.add(role, "Autorole on join");
             console.log(`Assigned autorole ${role.name} to ${member.user.tag}`);
           }
         }
@@ -26,11 +26,19 @@ module.exports = (client) => {
 
     // Kick record logic
     try {
-      const kickRecord = await UserKick.findOne({ userId: member.id, guildId: member.guild.id });
+      const kickRecord = await UserKick.findOne({
+        userId: member.id,
+        guildId: member.guild.id,
+      });
       if (kickRecord) {
-        await UserKick.deleteOne({ userId: member.id, guildId: member.guild.id });
+        await UserKick.deleteOne({
+          userId: member.id,
+          guildId: member.guild.id,
+        });
         await modLogger.logKickCaseDeleted(member.guild, member.id);
-        console.log(`Kick cases for user ${member.id} in guild ${member.guild.id} were deleted on rejoin.`);
+        console.log(
+          `Kick cases for user ${member.id} in guild ${member.guild.id} were deleted on rejoin.`
+        );
       }
     } catch (err) {
       console.error(`Error handling kick record: ${err}`);
@@ -38,19 +46,19 @@ module.exports = (client) => {
 
     // Welcome message (NEW!)
     try {
-      await sendWelcomeOrLeave(member, 'welcome');
+      await sendWelcomeOrLeave(member, "welcome");
     } catch (err) {
       console.error(`Error sending welcome message: ${err}`);
     }
   });
 
   // Member LEAVE
-  client.on('guildMemberRemove', async (member) => {
+  client.on("guildMemberRemove", async (member) => {
     console.log(`${member.user.tag} left the server!`);
 
     // Leave message (NEW!)
     try {
-      await sendWelcomeOrLeave(member, 'leave');
+      await sendWelcomeOrLeave(member, "leave");
     } catch (err) {
       console.error(`Error sending leave message: ${err}`);
     }

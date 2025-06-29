@@ -1,43 +1,55 @@
-const { EmbedBuilder, ChannelType, Events, PermissionsBitField } = require('discord.js');
-const LogConfig = require('../models/LogConfig');
+const {
+  EmbedBuilder,
+  ChannelType,
+  Events,
+  PermissionsBitField,
+} = require("discord.js");
+const LogConfig = require("../models/LogConfig");
 
-console.log('[DEBUG] channelEvents.js loaded!');
+console.log("[DEBUG] channelEvents.js loaded!");
 
 module.exports = (client) => {
   // Helper for readable channel types
   function channelTypeToString(type) {
     const types = {
-      [ChannelType.GuildText]: 'Text Channel',
-      [ChannelType.GuildVoice]: 'Voice Channel',
-      [ChannelType.GuildCategory]: 'Category',
-      [ChannelType.GuildAnnouncement]: 'Announcement Channel',
-      [ChannelType.AnnouncementThread]: 'Announcement Thread',
-      [ChannelType.PublicThread]: 'Public Thread',
-      [ChannelType.PrivateThread]: 'Private Thread',
-      [ChannelType.GuildStageVoice]: 'Stage Channel',
-      [ChannelType.GuildForum]: 'Forum Channel',
+      [ChannelType.GuildText]: "Text Channel",
+      [ChannelType.GuildVoice]: "Voice Channel",
+      [ChannelType.GuildCategory]: "Category",
+      [ChannelType.GuildAnnouncement]: "Announcement Channel",
+      [ChannelType.AnnouncementThread]: "Announcement Thread",
+      [ChannelType.PublicThread]: "Public Thread",
+      [ChannelType.PrivateThread]: "Private Thread",
+      [ChannelType.GuildStageVoice]: "Stage Channel",
+      [ChannelType.GuildForum]: "Forum Channel",
     };
-    return types[type] || 'Unknown';
+    return types[type] || "Unknown";
   }
 
   // Channel Created
   client.on(Events.ChannelCreate, async (channel) => {
-    console.log('[DEBUG] ChannelCreate event fired!', channel.name);
+    console.log("[DEBUG] ChannelCreate event fired!", channel.name);
     if (!channel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: channel.guild.id });
     if (!config?.logs?.channelCreate) return;
 
-    const logChannel = channel.guild.channels.cache.get(config.logs.channelCreate);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    const logChannel = channel.guild.channels.cache.get(
+      config.logs.channelCreate
+    );
+    if (
+      !logChannel
+        ?.permissionsFor(client.user)
+        ?.has(PermissionsBitField.Flags.SendMessages)
+    )
+      return;
 
     const embed = new EmbedBuilder()
       .setColor(0x12cdea)
-      .setTitle('Channel Created')
+      .setTitle("Channel Created")
       .addFields(
-        { name: 'Name', value: channel.name, inline: true },
-        { name: 'ID', value: channel.id, inline: true },
-        { name: 'Type', value: channelTypeToString(channel.type), inline: true }
+        { name: "Name", value: channel.name, inline: true },
+        { name: "ID", value: channel.id, inline: true },
+        { name: "Type", value: channelTypeToString(channel.type), inline: true }
       )
       .setTimestamp();
 
@@ -46,22 +58,29 @@ module.exports = (client) => {
 
   // Channel Deleted
   client.on(Events.ChannelDelete, async (channel) => {
-    console.log('[DEBUG] ChannelDelete event fired!', channel.name);
+    console.log("[DEBUG] ChannelDelete event fired!", channel.name);
     if (!channel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: channel.guild.id });
     if (!config?.logs?.channelDelete) return;
 
-    const logChannel = channel.guild.channels.cache.get(config.logs.channelDelete);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    const logChannel = channel.guild.channels.cache.get(
+      config.logs.channelDelete
+    );
+    if (
+      !logChannel
+        ?.permissionsFor(client.user)
+        ?.has(PermissionsBitField.Flags.SendMessages)
+    )
+      return;
 
     const embed = new EmbedBuilder()
       .setColor(0x5d47a0)
-      .setTitle('Channel Deleted')
+      .setTitle("Channel Deleted")
       .addFields(
-        { name: 'Name', value: channel.name, inline: true },
-        { name: 'ID', value: channel.id, inline: true },
-        { name: 'Type', value: channelTypeToString(channel.type), inline: true }
+        { name: "Name", value: channel.name, inline: true },
+        { name: "ID", value: channel.id, inline: true },
+        { name: "Type", value: channelTypeToString(channel.type), inline: true }
       )
       .setTimestamp();
 
@@ -70,29 +89,49 @@ module.exports = (client) => {
 
   // Channel Updated
   client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
-    console.log('[DEBUG] ChannelUpdate event fired!', oldChannel.name, '=>', newChannel.name);
+    console.log(
+      "[DEBUG] ChannelUpdate event fired!",
+      oldChannel.name,
+      "=>",
+      newChannel.name
+    );
     if (!newChannel.guild) return;
 
     const config = await LogConfig.findOne({ guildId: newChannel.guild.id });
     if (!config?.logs?.channelUpdate) return;
 
-    const logChannel = newChannel.guild.channels.cache.get(config.logs.channelUpdate);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    const logChannel = newChannel.guild.channels.cache.get(
+      config.logs.channelUpdate
+    );
+    if (
+      !logChannel
+        ?.permissionsFor(client.user)
+        ?.has(PermissionsBitField.Flags.SendMessages)
+    )
+      return;
 
     const changes = [];
     if (oldChannel.name !== newChannel.name) {
-      changes.push({ name: 'Name Changed', value: `**Before:** ${oldChannel.name}\n**After:** ${newChannel.name}` });
+      changes.push({
+        name: "Name Changed",
+        value: `**Before:** ${oldChannel.name}\n**After:** ${newChannel.name}`,
+      });
     }
-    if ('topic' in oldChannel && oldChannel.topic !== newChannel.topic) {
-      changes.push({ name: 'Topic Changed', value: `**Before:** ${oldChannel.topic || 'None'}\n**After:** ${newChannel.topic || 'None'}` });
+    if ("topic" in oldChannel && oldChannel.topic !== newChannel.topic) {
+      changes.push({
+        name: "Topic Changed",
+        value: `**Before:** ${oldChannel.topic || "None"}\n**After:** ${
+          newChannel.topic || "None"
+        }`,
+      });
     }
 
     if (changes.length === 0) return;
 
     const embed = new EmbedBuilder()
       .setColor(0x5d47a0)
-      .setTitle('Channel Updated')
-      .addFields(...changes, { name: 'Channel', value: `<#${newChannel.id}>` })
+      .setTitle("Channel Updated")
+      .addFields(...changes, { name: "Channel", value: `<#${newChannel.id}>` })
       .setTimestamp();
 
     logChannel.send({ embeds: [embed] }).catch(console.error);
@@ -100,19 +139,26 @@ module.exports = (client) => {
 
   // Thread Created
   client.on(Events.ThreadCreate, async (thread) => {
-    console.log('[DEBUG] ThreadCreate event fired:', thread.name);
+    console.log("[DEBUG] ThreadCreate event fired:", thread.name);
     const config = await LogConfig.findOne({ guildId: thread.guild.id });
     if (!config?.logs?.channelCreate) return;
-    const logChannel = thread.guild.channels.cache.get(config.logs.channelCreate);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    const logChannel = thread.guild.channels.cache.get(
+      config.logs.channelCreate
+    );
+    if (
+      !logChannel
+        ?.permissionsFor(client.user)
+        ?.has(PermissionsBitField.Flags.SendMessages)
+    )
+      return;
 
     const embed = new EmbedBuilder()
       .setColor(0x5d47a0)
-      .setTitle('Thread Created')
+      .setTitle("Thread Created")
       .addFields(
-        { name: 'Name', value: thread.name, inline: true },
-        { name: 'ID', value: thread.id, inline: true },
-        { name: 'Parent', value: `<#${thread.parentId}>`, inline: false }
+        { name: "Name", value: thread.name, inline: true },
+        { name: "ID", value: thread.id, inline: true },
+        { name: "Parent", value: `<#${thread.parentId}>`, inline: false }
       )
       .setTimestamp();
     logChannel.send({ embeds: [embed] }).catch(console.error);
@@ -120,19 +166,26 @@ module.exports = (client) => {
 
   // Thread Deleted
   client.on(Events.ThreadDelete, async (thread) => {
-    console.log('[DEBUG] ThreadDelete event fired:', thread.name);
+    console.log("[DEBUG] ThreadDelete event fired:", thread.name);
     const config = await LogConfig.findOne({ guildId: thread.guild.id });
     if (!config?.logs?.channelDelete) return;
-    const logChannel = thread.guild.channels.cache.get(config.logs.channelDelete);
-    if (!logChannel?.permissionsFor(client.user)?.has(PermissionsBitField.Flags.SendMessages)) return;
+    const logChannel = thread.guild.channels.cache.get(
+      config.logs.channelDelete
+    );
+    if (
+      !logChannel
+        ?.permissionsFor(client.user)
+        ?.has(PermissionsBitField.Flags.SendMessages)
+    )
+      return;
 
     const embed = new EmbedBuilder()
       .setColor(0x5d47a0)
-      .setTitle('Thread Deleted')
+      .setTitle("Thread Deleted")
       .addFields(
-        { name: 'Name', value: thread.name, inline: true },
-        { name: 'ID', value: thread.id, inline: true },
-        { name: 'Parent', value: `<#${thread.parentId}>`, inline: false }
+        { name: "Name", value: thread.name, inline: true },
+        { name: "ID", value: thread.id, inline: true },
+        { name: "Parent", value: `<#${thread.parentId}>`, inline: false }
       )
       .setTimestamp();
     logChannel.send({ embeds: [embed] }).catch(console.error);

@@ -1,26 +1,33 @@
 // events/messageCreate.js
-const StickyEmbed = require('../models/StickyEmbed');
-const { EmbedBuilder } = require('discord.js');
-const { handleLeveling } = require('../utils/leveling');
+const StickyEmbed = require("../models/StickyEmbed");
+const { EmbedBuilder } = require("discord.js");
+const { handleLeveling } = require("../utils/leveling");
 
 module.exports = (client) => {
-  client.on('messageCreate', async (message) => {
+  client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
     // --- LEVELING GOES HERE! ---
     handleLeveling(message);
 
-     // ---- STICKY LOGIC ----
+    // ---- STICKY LOGIC ----
     // Find all stickies in this channel for this guild
-    const stickies = await StickyEmbed.find({ guildId: message.guildId, 'stickies.channelId': message.channel.id });
+    const stickies = await StickyEmbed.find({
+      guildId: message.guildId,
+      "stickies.channelId": message.channel.id,
+    });
     if (!stickies.length) return;
 
     for (const sticky of stickies) {
       // Find the sticky record for this channel
-      const stickyInfo = sticky.stickies.find(s => s.channelId === message.channel.id);
+      const stickyInfo = sticky.stickies.find(
+        (s) => s.channelId === message.channel.id
+      );
       if (stickyInfo && stickyInfo.messageId) {
         try {
-          const oldMsg = await message.channel.messages.fetch(stickyInfo.messageId);
+          const oldMsg = await message.channel.messages.fetch(
+            stickyInfo.messageId
+          );
           if (oldMsg) await oldMsg.delete();
         } catch (e) {
           // Ignore if already deleted
@@ -31,12 +38,14 @@ module.exports = (client) => {
       const embed = new EmbedBuilder()
         .setTitle(sticky.embed.title)
         .setDescription(sticky.embed.description)
-        .setColor(sticky.embed.color || '#5865F2');
+        .setColor(sticky.embed.color || "#5865F2");
       const sentMsg = await message.channel.send({ embeds: [embed] });
 
       // Update sticky messageId in DB for this channel
-      sticky.stickies = sticky.stickies.map(s =>
-        s.channelId === message.channel.id ? { channelId: s.channelId, messageId: sentMsg.id } : s
+      sticky.stickies = sticky.stickies.map((s) =>
+        s.channelId === message.channel.id
+          ? { channelId: s.channelId, messageId: sentMsg.id }
+          : s
       );
       await sticky.save();
     }
