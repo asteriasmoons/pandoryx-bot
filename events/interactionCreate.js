@@ -1927,7 +1927,7 @@ module.exports = {
       return reminderCommand.handleComponent(interaction, client);
     }
 
-    // === Permissions System Menu Interactions ===
+    // ==== PERMISSIONS SYSTEM MENU INTERACTIONS ====
     if (interaction.isStringSelectMenu()) {
       const customId = interaction.customId;
 
