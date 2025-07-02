@@ -1,13 +1,37 @@
 // events/messageCreate.js
+
 const StickyEmbed = require("../models/StickyEmbed");
 const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
+const AutoDeleteChannel = require("../models/AutoDeleteChannel"); // <-- Added for autodelete
 const { EmbedBuilder } = require("discord.js");
 const { handleLeveling } = require("../utils/leveling");
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
+
+    // ------ AUTODELETE LOGIC STARTS HERE ------
+    // If this channel is configured for autodelete, schedule message deletion
+    if (message.guildId) {
+      const autodeleteConfig = await AutoDeleteChannel.findOne({
+        guildId: message.guildId,
+        channelId: message.channel.id
+      });
+
+      if (autodeleteConfig) {
+        setTimeout(async () => {
+          try {
+            if (!message.deleted) {
+              await message.delete();
+            }
+          } catch (err) {
+            // Silently fail if cannot delete (already gone or missing perms)
+          }
+        }, (autodeleteConfig.delaySeconds ?? 10) * 1000);
+      }
+    }
+    // ------ AUTODELETE LOGIC ENDS HERE ------
 
     // --- LEVELING GOES HERE! ---
     handleLeveling(message);
