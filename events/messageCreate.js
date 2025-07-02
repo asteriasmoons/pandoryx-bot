@@ -1,5 +1,4 @@
 // events/messageCreate.js
-
 const StickyEmbed = require("../models/StickyEmbed");
 const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
