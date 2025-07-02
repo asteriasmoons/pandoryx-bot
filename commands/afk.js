@@ -49,7 +49,7 @@ module.exports = {
       );
 
       const embed = new EmbedBuilder()
-        .setTitle("🌙 AFK Enabled")
+        .setTitle("AFK Enabled")
         .setDescription(`You're now AFK:\n> ${message}`)
         .setColor("#5865F2")
         .setFooter({ text: "AFK will clear when you send a message (unless disabled server-wide)." });
@@ -65,8 +65,8 @@ module.exports = {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
-              .setDescription("You weren’t marked as AFK.")
-              .setColor("#FEE75C")
+              .setDescription("You werent marked as AFK.")
+              .setColor("#5865F2")
           ]
         });
       }
@@ -74,9 +74,9 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle("✅ AFK Disabled")
+            .setTitle("AFK Disabled")
             .setDescription("You're no longer marked as AFK.")
-            .setColor("#57F287")
+            .setColor("#5865F2")
         ]
       });
     }
@@ -88,8 +88,8 @@ module.exports = {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
-              .setDescription("❌ You don’t have permission to toggle this.")
-              .setColor("#ED4245")
+              .setDescription("You dont have permission to toggle this.")
+              .setColor("#5865F2")
           ],
           ephemeral: true
         });
@@ -112,7 +112,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle("🔧 AFK Auto-Clear Setting Updated")
+            .setTitle("AFK Auto-Clear Setting Updated")
             .setDescription(state)
             .setColor("#5865F2")
         ]

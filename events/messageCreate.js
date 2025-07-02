@@ -30,7 +30,7 @@ module.exports = (client) => {
         // Optional: Inform user their AFK is cleared (can remove this if you want)
         const clearedEmbed = new EmbedBuilder()
           .setDescription("Your AFK status has been removed.")
-          .setColor("#57F287");
+          .setColor("#5865F2");
         try {
           await message.reply({ embeds: [clearedEmbed] });
         } catch (e) {
