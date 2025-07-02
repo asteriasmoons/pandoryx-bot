@@ -1,7 +1,7 @@
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  EmbedBuilder
+  EmbedBuilder,
 } = require("discord.js");
 
 const AfkStatus = require("../models/AfkStatus");
@@ -11,26 +11,26 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("afk")
     .setDescription("Manage AFK status")
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName("enable")
         .setDescription("Set your AFK message")
-        .addStringOption(opt =>
+        .addStringOption((opt) =>
           opt
             .setName("message")
             .setDescription("Your AFK message (emojis supported!)")
             .setRequired(true)
         )
     )
-    .addSubcommand(sub =>
-      sub
-        .setName("disable")
-        .setDescription("Disable your AFK status")
+    .addSubcommand((sub) =>
+      sub.setName("disable").setDescription("Disable your AFK status")
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName("nomessage")
-        .setDescription("Toggle whether AFK clears on user messages (server-wide)")
+        .setDescription(
+          "Toggle whether AFK clears on user messages (server-wide)"
+        )
     ),
 
   async execute(interaction) {
@@ -52,7 +52,9 @@ module.exports = {
         .setTitle("AFK Enabled")
         .setDescription(`You're now AFK:\n> ${message}`)
         .setColor("#5865F2")
-        .setFooter({ text: "AFK will clear when you send a message (unless disabled server-wide)." });
+        .setFooter({
+          text: "AFK will clear when you send a message (unless disabled server-wide).",
+        });
 
       return interaction.reply({ embeds: [embed] });
     }
@@ -66,8 +68,8 @@ module.exports = {
           embeds: [
             new EmbedBuilder()
               .setDescription("You werent marked as AFK.")
-              .setColor("#5865F2")
-          ]
+              .setColor("#5865F2"),
+          ],
         });
       }
 
@@ -76,22 +78,24 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("AFK Disabled")
             .setDescription("You're no longer marked as AFK.")
-            .setColor("#5865F2")
-        ]
+            .setColor("#5865F2"),
+        ],
       });
     }
 
     // === /afk nomessage ===
     if (sub === "nomessage") {
       // Require Manage Guild or use your permission system
-      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+      if (
+        !interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)
+      ) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
               .setDescription("You dont have permission to toggle this.")
-              .setColor("#5865F2")
+              .setColor("#5865F2"),
           ],
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
@@ -114,9 +118,9 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("AFK Auto-Clear Setting Updated")
             .setDescription(state)
-            .setColor("#5865F2")
-        ]
+            .setColor("#5865F2"),
+        ],
       });
     }
-  }
+  },
 };

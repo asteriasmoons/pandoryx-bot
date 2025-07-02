@@ -25,7 +25,10 @@ module.exports = (client) => {
 
       if (afkStatus && !noMessageReset) {
         // Clear AFK status for this user
-        await AfkStatus.deleteOne({ userId: message.author.id, guildId: message.guildId });
+        await AfkStatus.deleteOne({
+          userId: message.author.id,
+          guildId: message.guildId,
+        });
 
         // Optional: Inform user their AFK is cleared (can remove this if you want)
         const clearedEmbed = new EmbedBuilder()
@@ -52,8 +55,14 @@ module.exports = (client) => {
       // Reply
       if (message.reference && message.reference.messageId) {
         try {
-          const repliedMsg = await message.channel.messages.fetch(message.reference.messageId);
-          if (repliedMsg && repliedMsg.author && !afkUserIds.has(repliedMsg.author.id)) {
+          const repliedMsg = await message.channel.messages.fetch(
+            message.reference.messageId
+          );
+          if (
+            repliedMsg &&
+            repliedMsg.author &&
+            !afkUserIds.has(repliedMsg.author.id)
+          ) {
             afkUserIds.add(repliedMsg.author.id);
           }
         } catch (e) {
@@ -63,19 +72,26 @@ module.exports = (client) => {
 
       // For each AFK user mentioned or replied to, check and notify
       for (const userId of afkUserIds) {
-       // if (userId === message.author.id) continue; // Don't notify for yourself
+        // if (userId === message.author.id) continue; // Don't notify for yourself
 
-        const afkStatus = await AfkStatus.findOne({ userId, guildId: message.guildId });
+        const afkStatus = await AfkStatus.findOne({
+          userId,
+          guildId: message.guildId,
+        });
         if (afkStatus) {
           // Show the AFK message in a neat embed
-          const member = await message.guild.members.fetch(userId).catch(() => null);
+          const member = await message.guild.members
+            .fetch(userId)
+            .catch(() => null);
 
           const afkEmbed = new EmbedBuilder()
             .setTitle("AFK Notice")
             .setDescription(
               `${member ? `<@${userId}>` : "This user"} is currently AFK.\n\n` +
-              `**Message:**\n${afkStatus.message}\n` +
-              `**Since:** <t:${Math.floor(new Date(afkStatus.since).getTime() / 1000)}:R>`
+                `**Message:**\n${afkStatus.message}\n` +
+                `**Since:** <t:${Math.floor(
+                  new Date(afkStatus.since).getTime() / 1000
+                )}:R>`
             )
             .setColor("#5865F2");
 
