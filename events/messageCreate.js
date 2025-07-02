@@ -63,7 +63,7 @@ module.exports = (client) => {
 
       // For each AFK user mentioned or replied to, check and notify
       for (const userId of afkUserIds) {
-        if (userId === message.author.id) continue; // Don't notify for yourself
+       // if (userId === message.author.id) continue; // Don't notify for yourself
 
         const afkStatus = await AfkStatus.findOne({ userId, guildId: message.guildId });
         if (afkStatus) {
@@ -71,7 +71,7 @@ module.exports = (client) => {
           const member = await message.guild.members.fetch(userId).catch(() => null);
 
           const afkEmbed = new EmbedBuilder()
-            .setTitle("🌙 AFK Notice")
+            .setTitle("AFK Notice")
             .setDescription(
               `${member ? `<@${userId}>` : "This user"} is currently AFK.\n\n` +
               `**Message:**\n${afkStatus.message}\n` +
