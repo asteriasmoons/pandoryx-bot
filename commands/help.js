@@ -543,6 +543,46 @@ module.exports = {
       )
       .setFooter({ text: "Pandoryx Help Pages" });
 
+    const afkCmds = new EmbedBuilder()
+      .setTitle("**AFK Commands**")
+      .setColor("#ff51fe")
+      .addFields(
+        {
+          name: "</afk enable:1389998248302870548>",
+          value: "Enable afk with a message",
+        },
+        {
+          name: "</afk disable:1389998248302870548>",
+          value: "Disable yourself from being AFK",
+        },
+        {
+          name: "</afk nomessage:1389998248302870548>",
+          value:
+            "Disable or enable the ability to be taken off AFK if you send messages",
+        }
+      )
+      .setFooter({ text: "Pandoryx Help Pages" });
+
+    const autodeleteCmds = new EmbedBuilder()
+      .setTitle("**Auto Delete Commands**")
+      .setColor("#ff51fe")
+      .addFields(
+        {
+          name: "</autodelete set:1390071339955650683>",
+          value:
+            "Set a channel to have messages autodeleted after 10 seconds. OR set the duration you want",
+        },
+        {
+          name: "</autodelete remove:1390071339955650683>",
+          value: "Remove a channel from having its messages autodeleted.",
+        },
+        {
+          name: "</autodelete list:1390071339955650683>",
+          value: "Get a list of channels youve set for autodelete",
+        }
+      )
+      .setFooter({ text: "Pandoryx Help Pages" });
+
     const embeds = [
       helpPages,
       embedCmds,
@@ -567,6 +607,8 @@ module.exports = {
       verifyCmds,
       permsCmds,
       autothreadCmds,
+      afkCmds,
+      autodeleteCmds,
     ];
 
     // Embed navigation logic
