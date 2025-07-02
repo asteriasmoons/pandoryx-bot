@@ -81,6 +81,8 @@ const commandGroups = {
   welcomemessages: ["setwelcome.set", "setwelcome.test"],
   confessions: ["confessions.setup", "confessions.send"],
   verification: ["verify.panel", "verify.panel_edit"],
+  afk: ["afk.enable", "afk.disable", "afk.nomessage"],
+  autodelete: ["autodelete.set", "autodelete.list", "autodelete.remove"],
 };
 
 const groupLabels = {
@@ -105,6 +107,8 @@ const groupLabels = {
   welcomemessages: "Welcome Messages",
   confessions: "Confessions",
   verification: "Verification",
+  afk: "Afk System",
+  autodelete: "Auto Delete System",
 };
 
 function formatCommandLabel(cmd) {
