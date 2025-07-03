@@ -1,17 +1,21 @@
+// events/guildMemberAdd.js
 const Autorole = require("../models/Autorole");
 const UserKick = require("../models/UserKick");
 const modLogger = require("../modLogger");
-const sendWelcomeOrLeave = require("../utils/sendWelcomeLeave"); // NEW!
+const sendWelcomeOrLeave = require("../utils/sendWelcomeLeave");
 
-module.exports = (client) => {
-  // Member JOIN
-  client.on("guildMemberAdd", async (member) => {
+module.exports = {
+  name: "guildMemberAdd",
+  /**
+   * @param {GuildMember} member
+   */
+  async execute(member) {
     console.log(`${member.user.tag} joined the server!`);
 
     // Autorole logic
     try {
       const data = await Autorole.findOne({ guildId: member.guild.id });
-      if (data && data.roleIds && data.roleIds.length) {
+      if (data && Array.isArray(data.roleIds) && data.roleIds.length) {
         for (const roleId of data.roleIds) {
           const role = member.guild.roles.cache.get(roleId);
           if (role) {
@@ -44,23 +48,11 @@ module.exports = (client) => {
       console.error(`Error handling kick record: ${err}`);
     }
 
-    // Welcome message (NEW!)
+    // Welcome message
     try {
       await sendWelcomeOrLeave(member, "welcome");
     } catch (err) {
       console.error(`Error sending welcome message: ${err}`);
     }
-  });
-
-  // Member LEAVE
-  client.on("guildMemberRemove", async (member) => {
-    console.log(`${member.user.tag} left the server!`);
-
-    // Leave message (NEW!)
-    try {
-      await sendWelcomeOrLeave(member, "leave");
-    } catch (err) {
-      console.error(`Error sending leave message: ${err}`);
-    }
-  });
+  },
 };
