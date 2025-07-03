@@ -35,6 +35,12 @@ module.exports = {
             .setDescription("Role to assign when verified")
             .setRequired(true)
         )
+        .addRoleOption((opt) =>
+          opt
+            .setName("remove_role")
+            .setDescription("Role to remove when verified (optional)")
+            .setRequired(false)
+        )
         .addStringOption((opt) =>
           opt.setName("title").setDescription("Embed title")
         )
@@ -60,6 +66,12 @@ module.exports = {
             .setDescription("Role to assign when verified")
             .setRequired(true)
         )
+        .addRoleOption((opt) =>
+          opt
+            .setName("remove_role")
+            .setDescription("Role to remove when verified (optional)")
+            .setRequired(false)
+        )
         .addStringOption((opt) =>
           opt.setName("title").setDescription("Embed title")
         )
@@ -81,6 +93,7 @@ module.exports = {
 
     // Options for both create/edit
     const role = interaction.options.getRole("role");
+    const removeRole = interaction.options.getRole("remove_role");
     const title =
       interaction.options.getString("title") ?? "Verification Required";
     const description =
@@ -118,7 +131,8 @@ module.exports = {
           guildId: interaction.guild.id,
           channelId: msg.channel.id,
           messageId: msg.id,
-          roleId: role.id, // <-- Save roleId here
+          roleId: role.id,
+          removeRoleId: removeRole ? removeRole.id : null,
           title,
           description,
           color,
@@ -146,6 +160,7 @@ module.exports = {
 
       // Update DB
       config.roleId = role.id;
+      config.removeRoleId = removeRole ? removeRole.id : null;
       config.title = title;
       config.description = description;
       config.color = color;

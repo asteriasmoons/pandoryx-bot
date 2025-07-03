@@ -742,53 +742,31 @@ module.exports = {
     }
 
     // ==== VERIFY BUTTON ====
-    if (
-      interaction.isButton() &&
-      interaction.customId === "verify_panel_button"
-    ) {
-      // Fetch verify panel config for this guild
-      const config = await VerifyPanel.findOne({
-        guildId: interaction.guild.id,
-      });
-      if (!config) {
-        return interaction.reply({
-          content:
-            "Verification panel config not found. Please notify an admin.",
-          ephemeral: true,
-        });
-      }
-
-      const role = interaction.guild.roles.cache.get(config.roleId);
-      if (!role) {
-        return interaction.reply({
-          content: "Verification role not found. Please notify an admin.",
-          ephemeral: true,
-        });
-      }
-
-      // Already has the role?
-      if (interaction.member.roles.cache.has(role.id)) {
-        return interaction.reply({
-          content: `You are already verified!`,
-          ephemeral: true,
-        });
-      }
-
-      // Try to assign
-      try {
-        await interaction.member.roles.add(role);
-        return interaction.reply({
-          content: "You are now verified!",
-          ephemeral: true,
-        });
-      } catch (err) {
-        return interaction.reply({
-          content:
-            "Failed to assign the verification role. Please contact a staff member.",
-          ephemeral: true,
-        });
-      }
-    }
+    if (interaction.isButton() && interaction.customId === 'verify_panel_button') {
+  const config = await VerifyPanel.findOne({ guildId: interaction.guild.id });
+  if (!config) {
+    return interaction.reply({ content: 'Verification panel config not found. Please notify an admin.', ephemeral: true });
+  }
+  const role = interaction.guild.roles.cache.get(config.roleId);
+  if (!role) {
+    return interaction.reply({ content: 'Verification role not found. Please notify an admin.', ephemeral: true });
+  }
+  const removeRole = config.removeRoleId
+    ? interaction.guild.roles.cache.get(config.removeRoleId)
+    : null;
+  // Remove old role first (if any)
+  if (removeRole && interaction.member.roles.cache.has(removeRole.id)) {
+    await interaction.member.roles.remove(removeRole.id).catch(() => {});
+  }
+  // Add verified role if not already has it
+  if (!interaction.member.roles.cache.has(role.id)) {
+    await interaction.member.roles.add(role).catch(() => {});
+    // (add logging here if you want)
+    return interaction.reply({ content: 'You are now verified!', ephemeral: true });
+  } else {
+    return interaction.reply({ content: `You are already verified!`, ephemeral: true });
+  }
+}
 
     // === MODAL HANDLERS ===
     if (interaction.isModalSubmit()) {
