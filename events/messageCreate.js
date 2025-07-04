@@ -30,6 +30,7 @@ module.exports = (client) => {
             { upsert: true, new: true }
           );
 
+          // === CONFIRMATION OF BUMP EMBED ===
           const confirmationEmbed = new EmbedBuilder()
             .setTitle("✅ Bump Tracked!")
             .setDescription(
