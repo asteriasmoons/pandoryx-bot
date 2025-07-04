@@ -37,9 +37,11 @@ module.exports = (client) => {
 
           // === CONFIRMATION OF BUMP EMBED ===
           const confirmationEmbed = new EmbedBuilder()
-            .setTitle("✅ Bump Tracked!")
-            .setDescription("I've tracked this bump and will remind you in 2 hours.")
-            .setColor(0x57f287)
+            .setTitle("<:zxblt:1370269490885034095> Bump Tracked!")
+            .setDescription(
+              "I've tracked this bump and will remind you in 2 hours."
+            )
+            .setColor(0xaa00ff)
             .setTimestamp();
 
           try {
@@ -104,7 +106,7 @@ module.exports = (client) => {
         // Optional: Inform user their AFK is cleared (can remove this if you want)
         const clearedEmbed = new EmbedBuilder()
           .setDescription("Your AFK status has been removed.")
-          .setColor("#5865F2");
+          .setColor("#58b2f2");
         try {
           await message.reply({ embeds: [clearedEmbed] });
         } catch (e) {
@@ -164,7 +166,7 @@ module.exports = (client) => {
                   new Date(afkStatus.since).getTime() / 1000
                 )}:R>`
             )
-            .setColor("#5865F2");
+            .setColor("#58b2f2");
 
           try {
             await message.reply({ embeds: [afkEmbed] });

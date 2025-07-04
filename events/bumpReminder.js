@@ -10,7 +10,9 @@ module.exports = (client) => {
       const nextBump = new Date(reminder.lastBump).getTime() + 7200000; // 2 hours
 
       if (now >= nextBump) {
-        const guild = await client.guilds.fetch(reminder.guildId).catch(() => null);
+        const guild = await client.guilds
+          .fetch(reminder.guildId)
+          .catch(() => null);
         if (!guild) return;
 
         const channel = guild.channels.cache.get(reminder.channelId);
@@ -19,7 +21,7 @@ module.exports = (client) => {
         const embed = new EmbedBuilder()
           .setTitle(reminder.reminderTitle)
           .setDescription(reminder.reminderDesc)
-          .setColor(0x7289da)
+          .setColor(0x8f72da)
           .setTimestamp();
 
         await channel.send({ embeds: [embed] });

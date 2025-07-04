@@ -31,7 +31,9 @@ module.exports = {
         )
     )
     .addSubcommand((sub) =>
-      sub.setName("preview").setDescription("Preview the current reminder embed")
+      sub
+        .setName("preview")
+        .setDescription("Preview the current reminder embed")
     )
     .addSubcommand((sub) =>
       sub
@@ -62,9 +64,9 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle("✅ Title Updated")
+            .setTitle("Title Updated")
             .setDescription(`Reminder embed title set to:\n\n**${title}**`)
-            .setColor(0x57f287),
+            .setColor(0x8f72da),
         ],
         ephemeral: true,
       });
@@ -77,9 +79,11 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle("✅ Description Updated")
-            .setDescription(`Reminder embed description set to:\n\n${description}`)
-            .setColor(0x57f287),
+            .setTitle("Description Updated")
+            .setDescription(
+              `Reminder embed description set to:\n\n${description}`
+            )
+            .setColor(0x8f72da),
         ],
         ephemeral: true,
       });
@@ -91,7 +95,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle(reminder.reminderTitle)
             .setDescription(reminder.reminderDesc)
-            .setColor(0x7289da)
+            .setColor(0x8f72da)
             .setTimestamp(),
         ],
         ephemeral: true,
@@ -105,11 +109,11 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle("✅ Bump Channel Set")
+            .setTitle("Bump Channel Set")
             .setDescription(
               `I'll only listen for Disboard bumps and send reminders in ${channel}.`
             )
-            .setColor(0x57f287),
+            .setColor(0x8f72da),
         ],
         ephemeral: true,
       });
