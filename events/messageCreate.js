@@ -3,7 +3,7 @@ const StickyEmbed = require("../models/StickyEmbed");
 const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
 const AutoDeleteChannel = require("../models/AutoDeleteChannel");
-const BumpReminder = require("../models/BumpReminder"); // <-- Added for bump reminders
+const BumpReminder = require("../models/BumpReminder");
 const { EmbedBuilder } = require("discord.js");
 const { handleLeveling } = require("../utils/leveling");
 
@@ -14,28 +14,31 @@ module.exports = (client) => {
     // Ignore ALL bot messages except for Disboard bump tracking
     if (message.author.bot) {
       // ------ BUMP REMINDER LOGIC ------
-      // Listen for Disboard "Bump done" embeds to track bump times
+      // Only listen for Disboard "Bump done" embeds in the configured channel
       if (message.author.id === DISBOARD_ID) {
+        // Fetch bump config for this guild
+        const guildId = message.guild.id;
+        const bumpConfig = await BumpReminder.findOne({ guildId });
+
+        // Proceed ONLY if:
+        // 1. There's a bump config with a set channel
+        // 2. This message is in that channel
         if (
+          bumpConfig &&
+          bumpConfig.channelId === message.channel.id &&
           message.embeds.length &&
           message.embeds[0].description?.includes("Bump done")
         ) {
-          const guildId = message.guild.id;
-          const channelId = message.channel.id;
-
-          // Update or create bump reminder entry for this guild
+          // Update the last bump timestamp (and keep the configured channelId)
           await BumpReminder.findOneAndUpdate(
             { guildId },
-            { guildId, channelId, lastBump: new Date() },
-            { upsert: true, new: true }
+            { lastBump: new Date() }
           );
 
           // === CONFIRMATION OF BUMP EMBED ===
           const confirmationEmbed = new EmbedBuilder()
             .setTitle("✅ Bump Tracked!")
-            .setDescription(
-              "I've tracked this bump and will remind you in 2 hours."
-            )
+            .setDescription("I've tracked this bump and will remind you in 2 hours.")
             .setColor(0x57f287)
             .setTimestamp();
 

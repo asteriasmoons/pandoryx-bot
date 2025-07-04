@@ -1,6 +1,7 @@
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
+  ChannelType,
   EmbedBuilder,
 } = require("discord.js");
 const BumpReminder = require("../models/BumpReminder");
@@ -15,10 +16,7 @@ module.exports = {
         .setName("set-title")
         .setDescription("Set the reminder embed title")
         .addStringOption((opt) =>
-          opt
-            .setName("title")
-            .setDescription("Embed title")
-            .setRequired(true)
+          opt.setName("title").setDescription("Embed title").setRequired(true)
         )
     )
     .addSubcommand((sub) =>
@@ -33,15 +31,24 @@ module.exports = {
         )
     )
     .addSubcommand((sub) =>
+      sub.setName("preview").setDescription("Preview the current reminder embed")
+    )
+    .addSubcommand((sub) =>
       sub
-        .setName("preview")
-        .setDescription("Preview the current reminder embed")
+        .setName("set-channel")
+        .setDescription("Set the bump reminder channel")
+        .addChannelOption((opt) =>
+          opt
+            .setName("channel")
+            .setDescription("Channel to listen for bumps and send reminders")
+            .setRequired(true)
+            .addChannelTypes(ChannelType.GuildText)
+        )
     ),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
-
     let reminder = await BumpReminder.findOne({ guildId });
 
     if (!reminder) {
@@ -52,8 +59,7 @@ module.exports = {
       const title = interaction.options.getString("title");
       reminder.reminderTitle = title;
       await reminder.save();
-
-      await interaction.reply({
+      return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle("✅ Title Updated")
@@ -68,8 +74,7 @@ module.exports = {
       const description = interaction.options.getString("description");
       reminder.reminderDesc = description;
       await reminder.save();
-
-      await interaction.reply({
+      return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle("✅ Description Updated")
@@ -81,13 +86,30 @@ module.exports = {
     }
 
     if (sub === "preview") {
-      await interaction.reply({
+      return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle(reminder.reminderTitle)
             .setDescription(reminder.reminderDesc)
             .setColor(0x7289da)
             .setTimestamp(),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === "set-channel") {
+      const channel = interaction.options.getChannel("channel");
+      reminder.channelId = channel.id;
+      await reminder.save();
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("✅ Bump Channel Set")
+            .setDescription(
+              `I'll only listen for Disboard bumps and send reminders in ${channel}.`
+            )
+            .setColor(0x57f287),
         ],
         ephemeral: true,
       });
