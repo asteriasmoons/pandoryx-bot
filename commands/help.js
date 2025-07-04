@@ -583,6 +583,33 @@ module.exports = {
       )
       .setFooter({ text: "Pandoryx Help Pages" });
 
+    const bremindCmds = new EmbedBuilder()
+      .setTitle("**Bump Reminder Commands**")
+      .setColor("#ff51fe")
+      .addFields(
+        {
+          name: "</bumpreminder set-title:1390739062687531178>",
+          value: "Set the title for the bump reminder message",
+        },
+        {
+          name: "</bumpreminder set-description:1390739062687531178>",
+          value: "Set the description for the bump reminder message",
+        },
+        {
+          name: "</bumpreminder preview:1390739062687531178>",
+          value: "Preview the bump reminder message",
+        },
+        {
+          name: "</bumpreminder set-channel:1390739062687531178>",
+          value: "Set the channel for bump reminding",
+        },
+        {
+          name: "</bumpreminder set-role:1390739062687531178>",
+          value: "Set the role to be pinged with the bump reminder message",
+        }
+      )
+      .setFooter({ text: "Pandoryx Help Pages" });
+
     const embeds = [
       helpPages,
       embedCmds,
@@ -609,6 +636,7 @@ module.exports = {
       autothreadCmds,
       afkCmds,
       autodeleteCmds,
+      bremindCmds,
     ];
 
     // Embed navigation logic
