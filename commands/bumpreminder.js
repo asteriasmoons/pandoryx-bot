@@ -1,0 +1,96 @@
+const {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  EmbedBuilder,
+} = require("discord.js");
+const BumpReminder = require("../models/BumpReminder");
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName("bumpreminder")
+    .setDescription("Customize the bump reminder embed")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addSubcommand((sub) =>
+      sub
+        .setName("set-title")
+        .setDescription("Set the reminder embed title")
+        .addStringOption((opt) =>
+          opt
+            .setName("title")
+            .setDescription("Embed title")
+            .setRequired(true)
+        )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("set-description")
+        .setDescription("Set the reminder embed description")
+        .addStringOption((opt) =>
+          opt
+            .setName("description")
+            .setDescription("Embed description")
+            .setRequired(true)
+        )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("preview")
+        .setDescription("Preview the current reminder embed")
+    ),
+
+  async execute(interaction) {
+    const sub = interaction.options.getSubcommand();
+    const guildId = interaction.guild.id;
+
+    let reminder = await BumpReminder.findOne({ guildId });
+
+    if (!reminder) {
+      reminder = await BumpReminder.create({ guildId });
+    }
+
+    if (sub === "set-title") {
+      const title = interaction.options.getString("title");
+      reminder.reminderTitle = title;
+      await reminder.save();
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("✅ Title Updated")
+            .setDescription(`Reminder embed title set to:\n\n**${title}**`)
+            .setColor(0x57f287),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === "set-description") {
+      const description = interaction.options.getString("description");
+      reminder.reminderDesc = description;
+      await reminder.save();
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("✅ Description Updated")
+            .setDescription(`Reminder embed description set to:\n\n${description}`)
+            .setColor(0x57f287),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === "preview") {
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(reminder.reminderTitle)
+            .setDescription(reminder.reminderDesc)
+            .setColor(0x7289da)
+            .setTimestamp(),
+        ],
+        ephemeral: true,
+      });
+    }
+  },
+};

@@ -2,13 +2,43 @@
 const StickyEmbed = require("../models/StickyEmbed");
 const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
-const AutoDeleteChannel = require("../models/AutoDeleteChannel"); // <-- Added for autodelete
+const AutoDeleteChannel = require("../models/AutoDeleteChannel");
+const BumpReminder = require("../models/BumpReminder"); // <-- Added for bump reminders
 const { EmbedBuilder } = require("discord.js");
 const { handleLeveling } = require("../utils/leveling");
 
+const DISBOARD_ID = "302050872383242240"; // Disboard bot user ID
+
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
-    if (message.author.bot) return;
+    // Ignore ALL bot messages except for Disboard bump tracking
+    if (message.author.bot) {
+      // ------ BUMP REMINDER LOGIC ------
+      // Listen for Disboard "Bump done" embeds to track bump times
+      if (message.author.id === DISBOARD_ID) {
+        if (
+          message.embeds.length &&
+          message.embeds[0].description?.includes("Bump done")
+        ) {
+          const guildId = message.guild.id;
+          const channelId = message.channel.id;
+
+          // Update or create bump reminder entry for this guild
+          await BumpReminder.findOneAndUpdate(
+            { guildId },
+            { guildId, channelId, lastBump: new Date() },
+            { upsert: true, new: true }
+          );
+
+          // Optional: Log to console for debugging
+          console.log(
+            `[BUMP] Disboard bump detected in ${guildId} at ${new Date().toISOString()}`
+          );
+        }
+      }
+      // Ignore all other bots
+      return;
+    }
 
     // ------ AUTODELETE LOGIC STARTS HERE ------
     // If this channel is configured for autodelete, schedule message deletion
