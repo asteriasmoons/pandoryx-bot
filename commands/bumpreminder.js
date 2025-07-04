@@ -46,6 +46,17 @@ module.exports = {
             .setRequired(true)
             .addChannelTypes(ChannelType.GuildText)
         )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("set-role")
+        .setDescription("Set a role to ping when sending a bump reminder")
+        .addRoleOption((opt) =>
+          opt
+            .setName("role")
+            .setDescription("Role to ping (or choose 'none' to remove ping)")
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -66,7 +77,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Title Updated")
             .setDescription(`Reminder embed title set to:\n\n**${title}**`)
-            .setColor(0x8f72da),
+            .setColor(0x72bdda),
         ],
         ephemeral: true,
       });
@@ -83,7 +94,7 @@ module.exports = {
             .setDescription(
               `Reminder embed description set to:\n\n${description}`
             )
-            .setColor(0x8f72da),
+            .setColor(0x72bdda),
         ],
         ephemeral: true,
       });
@@ -95,7 +106,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle(reminder.reminderTitle)
             .setDescription(reminder.reminderDesc)
-            .setColor(0x8f72da)
+            .setColor(0x72bdda)
             .setTimestamp(),
         ],
         ephemeral: true,
@@ -113,7 +124,25 @@ module.exports = {
             .setDescription(
               `I'll only listen for Disboard bumps and send reminders in ${channel}.`
             )
-            .setColor(0x8f72da),
+            .setColor(0x72bdda),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === "set-role") {
+      const role = interaction.options.getRole("role");
+      reminder.pingRoleId = role.id;
+      await reminder.save();
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("Ping Role Set")
+            .setDescription(
+              `I'll ping <@&${role.id}> when sending bump reminders in this server.`
+            )
+            .setColor(0x72bdda),
         ],
         ephemeral: true,
       });

@@ -21,10 +21,19 @@ module.exports = (client) => {
         const embed = new EmbedBuilder()
           .setTitle(reminder.reminderTitle)
           .setDescription(reminder.reminderDesc)
-          .setColor(0x8f72da)
+          .setColor(0x72bdda)
           .setTimestamp();
 
-        await channel.send({ embeds: [embed] });
+        // Prepare role ping content if pingRoleId is set
+        let content = "";
+        if (reminder.pingRoleId) {
+          content = `<@&${reminder.pingRoleId}>`;
+        }
+
+        await channel.send({
+          content: content || undefined, // ping the role if present
+          embeds: [embed],
+        });
 
         reminder.lastBump = new Date();
         await reminder.save();
