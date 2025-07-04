@@ -41,7 +41,7 @@ module.exports = (client) => {
             .setDescription(
               "I've tracked this bump and will remind you in 2 hours."
             )
-            .setColor(0xaa00ff)
+            .setColor(0x72bdda)
             .setTimestamp();
 
           try {
