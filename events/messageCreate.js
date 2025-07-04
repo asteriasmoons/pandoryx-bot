@@ -30,6 +30,20 @@ module.exports = (client) => {
             { upsert: true, new: true }
           );
 
+          const confirmationEmbed = new EmbedBuilder()
+            .setTitle("✅ Bump Tracked!")
+            .setDescription(
+              "I've tracked this bump and will remind you in 2 hours."
+            )
+            .setColor(0x57f287)
+            .setTimestamp();
+
+          try {
+            await message.channel.send({ embeds: [confirmationEmbed] });
+          } catch (e) {
+            // fail silently if it can't send
+          }
+
           // Optional: Log to console for debugging
           console.log(
             `[BUMP] Disboard bump detected in ${guildId} at ${new Date().toISOString()}`
@@ -45,7 +59,7 @@ module.exports = (client) => {
     if (message.guildId) {
       const autodeleteConfig = await AutoDeleteChannel.findOne({
         guildId: message.guildId,
-        channelId: message.channel.id
+        channelId: message.channel.id,
       });
 
       if (autodeleteConfig) {
