@@ -101,7 +101,11 @@ module.exports = {
     }
 
     if (sub === "preview") {
+      let content = "";
+      if (reminder.pingRoleId) content = `<@&${reminder.pingRoleId}>`;
+
       return interaction.reply({
+        content: content || undefined,
         embeds: [
           new EmbedBuilder()
             .setTitle(reminder.reminderTitle)
