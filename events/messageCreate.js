@@ -29,10 +29,10 @@ module.exports = (client) => {
           message.embeds.length &&
           message.embeds[0].description?.includes("Bump done")
         ) {
-          // Update the last bump timestamp (and keep the configured channelId)
+          // --- Reset reminderSent for the new bump ---
           await BumpReminder.findOneAndUpdate(
             { guildId },
-            { lastBump: new Date() }
+            { lastBump: new Date(), reminderSent: false } // <-- key line!
           );
 
           // === CONFIRMATION OF BUMP EMBED ===

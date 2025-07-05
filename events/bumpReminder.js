@@ -6,13 +6,15 @@ module.exports = (client) => {
     const reminders = await BumpReminder.find();
 
     reminders.forEach(async (reminder) => {
+      // Only proceed if there is a last bump and reminder hasn't been sent yet
+      if (!reminder.lastBump) return;
+      if (reminder.reminderSent) return;
+
       const now = Date.now();
       const nextBump = new Date(reminder.lastBump).getTime() + 7200000; // 2 hours
 
       if (now >= nextBump) {
-        const guild = await client.guilds
-          .fetch(reminder.guildId)
-          .catch(() => null);
+        const guild = await client.guilds.fetch(reminder.guildId).catch(() => null);
         if (!guild) return;
 
         const channel = guild.channels.cache.get(reminder.channelId);
@@ -35,7 +37,8 @@ module.exports = (client) => {
           embeds: [embed],
         });
 
-        reminder.lastBump = new Date();
+        // Mark the reminder as sent so it won't repeat until the next bump
+        reminder.reminderSent = true;
         await reminder.save();
       }
     });

@@ -10,6 +10,7 @@ const BumpReminderSchema = new mongoose.Schema({
     default: "Use `/bump` to bump your server on Disboard!",
   },
   pingRoleId: { type: String, default: null },
+  reminderSent: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("BumpReminder", BumpReminderSchema);
