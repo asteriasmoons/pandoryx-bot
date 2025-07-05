@@ -79,6 +79,18 @@ module.exports = {
             .setRequired(true)
         )
     )
+    // SET CHANNEL
+    .addSubcommand((sub) =>
+      sub
+        .setName("set-channel")
+        .setDescription("Set the channel for level up announcements")
+        .addChannelOption((opt) =>
+          opt
+            .setName("channel")
+            .setDescription("Select a text channel")
+            .setRequired(true)
+        )
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
@@ -271,6 +283,34 @@ module.exports = {
         );
 
       return interaction.reply({ embeds: [embed] });
+    }
+
+    // ---- SET CHANNEL ----
+    if (sub === "set-channel") {
+      const channel = interaction.options.getChannel("channel");
+      if (!channel.isTextBased?.()) {
+        return interaction.reply({
+          content: "Please select a text channel.",
+          ephemeral: true,
+        });
+      }
+
+      await GuildConfig.findOneAndUpdate(
+        { guildId },
+        { $set: { levelUpChannel: channel.id } },
+        { upsert: true }
+      );
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x43b581)
+            .setTitle("Level Up Channel Set")
+            .setDescription(
+              `Level up announcements will now be sent in ${channel}.`
+            ),
+        ],
+      });
     }
   },
 };

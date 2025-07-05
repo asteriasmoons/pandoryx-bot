@@ -60,7 +60,25 @@ async function handleLeveling(message) {
       .setTimestamp()
       .setThumbnail(message.author.displayAvatarURL?.());
 
-    await message.channel.send({ embeds: [levelEmbed] });
+    // Send to levelUpChannel if set, else fallback to current channel
+    let sent = false;
+    const announcementChannelId = config?.levelUpChannel;
+    if (announcementChannelId) {
+      try {
+        const announceChannel = await message.guild.channels.fetch(
+          announcementChannelId
+        );
+        if (announceChannel && announceChannel.isTextBased?.()) {
+          await announceChannel.send({ embeds: [levelEmbed] });
+          sent = true;
+        }
+      } catch (e) {
+        /* Channel may be missing or deleted */
+      }
+    }
+    if (!sent) {
+      await message.channel.send({ embeds: [levelEmbed] });
+    }
 
     // Reward role
     const rewardRole = config?.levelRoles?.find((r) => r.level === newLevel);
@@ -69,14 +87,26 @@ async function handleLeveling(message) {
         const member = await message.guild.members.fetch(userId);
         await member.roles.add(rewardRole.roleId);
 
-        // Optional: Announce role reward as embed
+        // Optional: Announce role reward as embed (same channel as above)
         const roleEmbed = new EmbedBuilder()
           .setColor(0x663399)
           .setDescription(
             `<@${userId}> has been awarded the role <@&${rewardRole.roleId}> for reaching Level ${newLevel}!`
           )
           .setTimestamp();
-        await message.channel.send({ embeds: [roleEmbed] });
+
+        if (sent && announcementChannelId) {
+          // send in the announcement channel
+          const announceChannel = await message.guild.channels.fetch(
+            announcementChannelId
+          );
+          if (announceChannel && announceChannel.isTextBased?.()) {
+            await announceChannel.send({ embeds: [roleEmbed] });
+          }
+        } else {
+          // send in the fallback channel
+          await message.channel.send({ embeds: [roleEmbed] });
+        }
       } catch (err) {
         console.error(`Could not assign level role:`, err);
       }
