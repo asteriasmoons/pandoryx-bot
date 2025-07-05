@@ -610,6 +610,30 @@ module.exports = {
       )
       .setFooter({ text: "Pandoryx Help Pages" });
 
+    const autoreactCmds = new EmbedBuilder()
+      .setTitle("**Autoreact Commands**")
+      .setColor("#ff51fe")
+      .addFields(
+        {
+          name: "</autoreact set:1391075358174089276>",
+          value:
+            "Set a channels messages to be reacted on automatically and choose your reactions",
+        },
+        {
+          name: "</autoreact edit:1391075358174089276>",
+          value: "Edit channel auto reactions",
+        },
+        {
+          name: "</autoreact remove:1391075358174089276>",
+          value: "Remove a channel from getting autoreactions on every message",
+        },
+        {
+          name: "</autoreact list:1391075358174089276>",
+          value: "List all autoreact channels and their emojis",
+        }
+      )
+      .setFooter({ text: "Pandoryx Help Pages" });
+
     const embeds = [
       helpPages,
       embedCmds,
@@ -637,6 +661,7 @@ module.exports = {
       afkCmds,
       autodeleteCmds,
       bremindCmds,
+      autoreactCmds,
     ];
 
     // Embed navigation logic
