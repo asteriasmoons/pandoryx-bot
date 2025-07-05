@@ -4,6 +4,7 @@ const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
 const AutoDeleteChannel = require("../models/AutoDeleteChannel");
 const BumpReminder = require("../models/BumpReminder");
+const AutoReact = require("../models/AutoReact"); // <-- Added for auto-reactions
 const { EmbedBuilder } = require("discord.js");
 const { handleLeveling } = require("../utils/leveling");
 
@@ -11,6 +12,26 @@ const DISBOARD_ID = "302050872383242240"; // Disboard bot user ID
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
+    // ===== AUTO-REACTION LOGIC STARTS HERE =====
+    // This runs FIRST so every message (non-bot) can be reacted to if needed
+    if (message.guild && !message.author.bot) {
+      const config = await AutoReact.findOne({
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+      });
+
+      if (config) {
+        for (const emoji of config.emojis) {
+          try {
+            await message.react(emoji);
+          } catch (e) {
+            // Fail silently if emoji is invalid or bot can't use it
+          }
+        }
+      }
+    }
+    // ===== AUTO-REACTION LOGIC ENDS HERE =====
+
     // Ignore ALL bot messages except for Disboard bump tracking
     if (message.author.bot) {
       // ------ BUMP REMINDER LOGIC ------
@@ -103,7 +124,7 @@ module.exports = (client) => {
           guildId: message.guildId,
         });
 
-        // Optional: Inform user their AFK is cleared (can remove this if you want)
+        // Inform user their AFK is cleared (embed)
         const clearedEmbed = new EmbedBuilder()
           .setDescription("Your AFK status has been removed.")
           .setColor("#58b2f2");
