@@ -8,14 +8,16 @@ module.exports = {
     const clientId = process.env.PATREON_CLIENT_ID;
     const redirectUri = process.env.PATREON_REDIRECT_URI;
 
-    // Notice: SCOPES ARE PLAIN SPACE-SEPARATED STRINGS
     const scopes = "identity identity.memberships identity.social_connections";
 
     const loginUrl =
-      `https://www.patreon.com/oauth2/authorize?response_type=code` +
+      `https://www.patreon.com/oauth2/authorize` +
+      `?response_type=code` +
       `&client_id=${clientId}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&scope=${encodeURIComponent(scopes)}`;
+
+    console.log("LOGIN URL: ", loginUrl);
 
     await interaction.reply({
       content:
