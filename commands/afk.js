@@ -34,26 +34,6 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const Premium = require("../models/Premium");
-
-    const premiumUser = await Premium.findOne({
-      discordId: interaction.user.id,
-    });
-
-    if (!premiumUser) {
-      const embed = new EmbedBuilder()
-        .setColor(0xffcc00)
-        .setTitle("🔒 Premium Only")
-        .setDescription(
-          "This command is for premium users only.\nUse `/claimpremium` to link your Patreon and unlock access!"
-        );
-
-      return interaction.reply({
-        embeds: [embed],
-        ephemeral: true,
-      });
-    }
-
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
     const userId = interaction.user.id;
