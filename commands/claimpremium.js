@@ -6,19 +6,15 @@ module.exports = {
     .setDescription("Link your Patreon to unlock Pandoryx premium features!"),
   async execute(interaction) {
     const clientId = process.env.PATREON_CLIENT_ID;
-    const redirectUri = encodeURIComponent(process.env.PATREON_REDIRECT_URI);
+    const redirectUri = process.env.PATREON_REDIRECT_URI;
 
-    // Use a real space in the scopes array, then encode them
-    const scopes = [
-      "identity",
-      "identity.memberships",
-      "identity.social_connections"
-    ].join(" ");
+    // Notice: SCOPES ARE PLAIN SPACE-SEPARATED STRINGS
+    const scopes = "identity identity.memberships identity.social_connections";
 
     const loginUrl =
       `https://www.patreon.com/oauth2/authorize?response_type=code` +
       `&client_id=${clientId}` +
-      `&redirect_uri=${redirectUri}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&scope=${encodeURIComponent(scopes)}`;
 
     await interaction.reply({
