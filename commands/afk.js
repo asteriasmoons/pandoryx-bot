@@ -35,8 +35,8 @@ module.exports = {
 
   async execute(interaction) {
     // ==== PREMIUM CHECK START ====
-    const premiumRoleId = "1391553226293252147";
-    const ownerId = "1202652142482231417"; // MY Discord ID
+    const premiumRoleId = "1391553226293252147"; // PREMIUM ROLE
+    const ownerId = "1202652142482231417"; // MY DISCORD ID
 
     if (
       !interaction.member.roles.cache.has(premiumRoleId) &&
