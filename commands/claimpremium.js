@@ -5,16 +5,21 @@ module.exports = {
     .setName("claimpremium")
     .setDescription("Link your Patreon to unlock Pandoryx premium features!"),
   async execute(interaction) {
-    // -- These should be set as env vars in your bot project
     const clientId = process.env.PATREON_CLIENT_ID;
     const redirectUri = encodeURIComponent(process.env.PATREON_REDIRECT_URI);
 
-    // ✅ Make sure to include identity.social_connections in scope!
+    // Use a real space in the scopes array, then encode them
+    const scopes = [
+      "identity",
+      "identity.memberships",
+      "identity.social_connections"
+    ].join(" ");
+
     const loginUrl =
       `https://www.patreon.com/oauth2/authorize?response_type=code` +
       `&client_id=${clientId}` +
       `&redirect_uri=${redirectUri}` +
-      `&scope=identity%20identity.memberships%20identity.social_connections`;
+      `&scope=${encodeURIComponent(scopes)}`;
 
     await interaction.reply({
       content:
