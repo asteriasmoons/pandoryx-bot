@@ -34,6 +34,27 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    // ==== PREMIUM CHECK START ====
+    const premiumRoleId = "1391553226293252147";
+    const ownerId = "1202652142482231417"; // MY Discord ID
+
+    if (
+      !interaction.member.roles.cache.has(premiumRoleId) &&
+      interaction.user.id !== ownerId
+    ) {
+      const embed = new EmbedBuilder()
+        .setColor(0x9085cc)
+        .setTitle("🔒 Premium Only")
+        .setDescription(
+          "These commands are for premium users only.\nBuy a Server Subscription to unlock access!"
+        );
+
+      return interaction.reply({
+        embeds: [embed],
+        ephemeral: true,
+      });
+    } // ==== PREMIUM CHECK END ====
+
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
     const userId = interaction.user.id;
