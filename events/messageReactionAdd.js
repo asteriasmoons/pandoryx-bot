@@ -43,10 +43,10 @@ module.exports = {
                 reaction.message.content || "[No message content]"
               )
               .setFooter({
-                text: `⭐ ${reaction.count} | ${reaction.message.id}`,
+                text: `${reaction.count} | ${reaction.message.id}`,
               })
               .setTimestamp(reaction.message.createdAt)
-              .setColor(0xfee75c)
+              .setColor(0x663399)
               .setURL(reaction.message.url);
 
             if (reaction.message.attachments.size > 0) {

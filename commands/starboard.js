@@ -54,9 +54,21 @@ module.exports = {
     .addSubcommand((sub) =>
       sub.setName("disable").setDescription("Disable Starboard")
     ),
-  permissions: [PermissionFlagsBits.ManageGuild],
 
   async execute(interaction) {
+    // ==== PERMISSION CHECK ====
+    // Replace 'ManageMessages' with your needed permission
+    if (!interaction.member.permissions.has("ManageMessages")) {
+      const embed = new EmbedBuilder()
+        .setColor(0x663399)
+        .setTitle("Insufficient Permissions")
+        .setDescription(
+          "You need the `Manage Messages` permission to use this command."
+        );
+
+      return interaction.reply({ embeds: [embed], ephemeral: true });
+    } // ============================
+
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
 
@@ -83,7 +95,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Emoji Set")
             .setDescription(`Starboard emoji set to ${emoji}`)
-            .setColor(0xfee75c),
+            .setColor(0x663399),
         ],
       });
     }
@@ -100,7 +112,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Channel Set")
             .setDescription(`Starboard messages will be posted in ${channel}`)
-            .setColor(0xfee75c),
+            .setColor(0x663399),
         ],
       });
     }
@@ -119,7 +131,7 @@ module.exports = {
             .setDescription(
               `Messages now require **${number}** ${config.emoji} to star.`
             )
-            .setColor(0xfee75c),
+            .setColor(0x663399),
         ],
       });
     }
@@ -134,7 +146,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Enabled")
             .setDescription("Starboard is now enabled! ⭐")
-            .setColor(0x57f287),
+            .setColor(0x663399),
         ],
       });
     }
@@ -149,7 +161,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Disabled")
             .setDescription("Starboard has been disabled.")
-            .setColor(0xed4245),
+            .setColor(0x663399),
         ],
       });
     }

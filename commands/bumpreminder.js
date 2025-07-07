@@ -60,6 +60,19 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    // ==== PERMISSION CHECK ====
+    // Replace 'ManageMessages' with your needed permission
+    if (!interaction.member.permissions.has("ManageMessages")) {
+      const embed = new EmbedBuilder()
+        .setColor(0xff5555)
+        .setTitle("Insufficient Permissions")
+        .setDescription(
+          "You need the `Manage Messages` permission to use this command."
+        );
+
+      return interaction.reply({ embeds: [embed], ephemeral: true });
+    } // =========================
+
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
     let reminder = await BumpReminder.findOne({ guildId });
