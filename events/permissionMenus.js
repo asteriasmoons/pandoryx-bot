@@ -83,6 +83,7 @@ const commandGroups = {
   verification: ["verify.panel", "verify.panel_edit"],
   afk: ["afk.enable", "afk.disable", "afk.nomessage"],
   autodelete: ["autodelete.set", "autodelete.list", "autodelete.remove"],
+  autoreact: ["autoreact.set", "autoreact.edit", "autoreact.list", "autoreact.remove"],
 };
 
 const groupLabels = {
@@ -109,6 +110,7 @@ const groupLabels = {
   verification: "Verification",
   afk: "Afk System",
   autodelete: "Auto Delete System",
+  autoreact: "Auto React System",
 };
 
 function formatCommandLabel(cmd) {
