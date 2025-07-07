@@ -1,5 +1,6 @@
 const ReactionRoleMessage = require("../models/ReactionRoleMessage");
 const { EmbedBuilder } = require("discord.js");
+const { shouldStarboard } = require("../utils/starboard"); // <-- Starboard utility import
 
 function getEmojiKey(emoji) {
   return emoji.id ? emoji.id : emoji.name;
@@ -22,10 +23,34 @@ module.exports = {
         await reaction.fetch();
       }
 
-      if (!reaction.message.guild) {
-        console.log("Ignored: Not in a guild");
+      // --- STARBOARD LOGIC STARTS HERE ---
+      const { shouldStar, config } = await shouldStarboard(reaction.message, reaction);
+      if (shouldStar) {
+        try {
+          const starChannel = reaction.message.guild.channels.cache.get(config.channelId);
+          if (starChannel) {
+            const starEmbed = new EmbedBuilder()
+              .setAuthor({ name: reaction.message.author.tag, iconURL: reaction.message.author.displayAvatarURL() })
+              .setDescription(reaction.message.content || "[No message content]")
+              .setFooter({ text: `⭐ ${reaction.count} | ${reaction.message.id}` })
+              .setTimestamp(reaction.message.createdAt)
+              .setColor(0xFEE75C)
+              .setURL(reaction.message.url);
+
+            if (reaction.message.attachments.size > 0) {
+              starEmbed.setImage(reaction.message.attachments.first().url);
+            }
+
+            await starChannel.send({ embeds: [starEmbed] });
+            console.log("Starboard post sent to channel:", starChannel.name);
+          }
+        } catch (err) {
+          console.error("Starboard error:", err);
+        }
+        // Only one reaction handler per message: if Starboard triggers, stop here!
         return;
       }
+      // --- STARBOARD LOGIC ENDS HERE ---
 
       console.log("Looking for message ID:", reaction.message.id);
 
