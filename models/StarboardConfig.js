@@ -5,7 +5,7 @@ const StarboardConfigSchema = new mongoose.Schema({
   channelId: { type: String, required: true },
   emoji: { type: String, required: true }, // Unicode or custom emoji string
   threshold: { type: Number, default: 3 },
-  enabled: { type: Boolean, default: true }
+  enabled: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model("StarboardConfig", StarboardConfigSchema);

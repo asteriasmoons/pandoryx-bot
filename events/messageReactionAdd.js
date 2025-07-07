@@ -24,17 +24,29 @@ module.exports = {
       }
 
       // --- STARBOARD LOGIC STARTS HERE ---
-      const { shouldStar, config } = await shouldStarboard(reaction.message, reaction);
+      const { shouldStar, config } = await shouldStarboard(
+        reaction.message,
+        reaction
+      );
       if (shouldStar) {
         try {
-          const starChannel = reaction.message.guild.channels.cache.get(config.channelId);
+          const starChannel = reaction.message.guild.channels.cache.get(
+            config.channelId
+          );
           if (starChannel) {
             const starEmbed = new EmbedBuilder()
-              .setAuthor({ name: reaction.message.author.tag, iconURL: reaction.message.author.displayAvatarURL() })
-              .setDescription(reaction.message.content || "[No message content]")
-              .setFooter({ text: `⭐ ${reaction.count} | ${reaction.message.id}` })
+              .setAuthor({
+                name: reaction.message.author.tag,
+                iconURL: reaction.message.author.displayAvatarURL(),
+              })
+              .setDescription(
+                reaction.message.content || "[No message content]"
+              )
+              .setFooter({
+                text: `⭐ ${reaction.count} | ${reaction.message.id}`,
+              })
               .setTimestamp(reaction.message.createdAt)
-              .setColor(0xFEE75C)
+              .setColor(0xfee75c)
               .setURL(reaction.message.url);
 
             if (reaction.message.attachments.size > 0) {

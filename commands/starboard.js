@@ -3,7 +3,7 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   ChannelType,
-  EmbedBuilder
+  EmbedBuilder,
 } = require("discord.js");
 const StarboardConfig = require("../models/StarboardConfig");
 
@@ -11,47 +11,48 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("starboard")
     .setDescription("Configure and manage the server's Starboard feature.")
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName("set-emoji")
         .setDescription("Set the emoji for Starboard")
-        .addStringOption(opt =>
-          opt.setName("emoji")
-            .setDescription("Emoji to use (Unicode or custom, e.g., ⭐ or <:myemoji:1234567890>)")
+        .addStringOption((opt) =>
+          opt
+            .setName("emoji")
+            .setDescription(
+              "Emoji to use (Unicode or custom, e.g., ⭐ or <:myemoji:1234567890>)"
+            )
             .setRequired(true)
         )
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName("set-channel")
         .setDescription("Set the Starboard channel")
-        .addChannelOption(opt =>
-          opt.setName("channel")
+        .addChannelOption((opt) =>
+          opt
+            .setName("channel")
             .setDescription("Channel to post starred messages in")
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)
         )
     )
-    .addSubcommand(sub =>
+    .addSubcommand((sub) =>
       sub
         .setName("set-threshold")
         .setDescription("Set the number of reactions needed")
-        .addIntegerOption(opt =>
-          opt.setName("number")
+        .addIntegerOption((opt) =>
+          opt
+            .setName("number")
             .setDescription("How many reactions before starring")
             .setMinValue(1)
             .setRequired(true)
         )
     )
-    .addSubcommand(sub =>
-      sub
-        .setName("enable")
-        .setDescription("Enable Starboard")
+    .addSubcommand((sub) =>
+      sub.setName("enable").setDescription("Enable Starboard")
     )
-    .addSubcommand(sub =>
-      sub
-        .setName("disable")
-        .setDescription("Disable Starboard")
+    .addSubcommand((sub) =>
+      sub.setName("disable").setDescription("Disable Starboard")
     ),
   permissions: [PermissionFlagsBits.ManageGuild],
 
@@ -66,7 +67,7 @@ module.exports = {
         channelId: "none",
         emoji: "⭐",
         threshold: 3,
-        enabled: false
+        enabled: false,
       });
     }
 
@@ -82,8 +83,8 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Emoji Set")
             .setDescription(`Starboard emoji set to ${emoji}`)
-            .setColor(0xFEE75C)
-        ]
+            .setColor(0xfee75c),
+        ],
       });
     }
 
@@ -99,8 +100,8 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Channel Set")
             .setDescription(`Starboard messages will be posted in ${channel}`)
-            .setColor(0xFEE75C)
-        ]
+            .setColor(0xfee75c),
+        ],
       });
     }
 
@@ -115,9 +116,11 @@ module.exports = {
         embeds: [
           new EmbedBuilder()
             .setTitle("Starboard Threshold Set")
-            .setDescription(`Messages now require **${number}** ${config.emoji} to star.`)
-            .setColor(0xFEE75C)
-        ]
+            .setDescription(
+              `Messages now require **${number}** ${config.emoji} to star.`
+            )
+            .setColor(0xfee75c),
+        ],
       });
     }
 
@@ -131,8 +134,8 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Enabled")
             .setDescription("Starboard is now enabled! ⭐")
-            .setColor(0x57F287)
-        ]
+            .setColor(0x57f287),
+        ],
       });
     }
 
@@ -146,9 +149,9 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Starboard Disabled")
             .setDescription("Starboard has been disabled.")
-            .setColor(0xED4245)
-        ]
+            .setColor(0xed4245),
+        ],
       });
     }
-  }
+  },
 };

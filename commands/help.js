@@ -634,6 +634,34 @@ module.exports = {
       )
       .setFooter({ text: "Pandoryx Help Pages" });
 
+    const starboardCmds = new EmbedBuilder()
+      .setTitle("**Starboard Commands**")
+      .setColor("#ff51fe")
+      .addFields(
+        {
+          name: "</starboard set-emoji:1391790741012873258>",
+          value: "Set whatever emoji you want for your starboard",
+        },
+        {
+          name: "</starboard set-channel:1391790741012873258>",
+          value: "Set the channel for Starboard entries to go to",
+        },
+        {
+          name: "</starboard set-threshold:1391790741012873258>",
+          value:
+            "Set how many stars a message needs before it goes up on the Starboard",
+        },
+        {
+          name: "</starboard enable:1391790741012873258>",
+          value: "Enable the starboard in your server",
+        },
+        {
+          name: "</starboard disable:1391790741012873258>",
+          value: "Disable the starboard in your server",
+        }
+      )
+      .setFooter({ text: "Pandoryx Help Pages" });
+
     const embeds = [
       helpPages,
       embedCmds,
@@ -662,6 +690,7 @@ module.exports = {
       autodeleteCmds,
       bremindCmds,
       autoreactCmds,
+      starboardCmds,
     ];
 
     // Embed navigation logic
