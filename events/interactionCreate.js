@@ -8,6 +8,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   PermissionFlagsBits,
+  PermissionsBitField,
   StringSelectMenuBuilder,
   RoleSelectMenuInteraction,
   ChannelSelectMenuBuilder,
