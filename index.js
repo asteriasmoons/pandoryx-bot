@@ -85,6 +85,7 @@ require("./events/channelEvents.js")(client);
 require("./events/roleEvents.js")(client);
 require("./events/messageCreate")(client);
 require('./events/bumpReminder')(client);
+require("./events/threadCreate.js")(client);
 
 // Example debug event
 client.on("messageReactionAdd", (reaction, user) => {
