@@ -768,6 +768,45 @@ module.exports = {
   }
 }
 
+// ==== AUTO FORUM BUTTON ====
+if (
+  interaction.isButton() &&
+  interaction.customId.startsWith('autoforum-close-')
+) {
+  const opId = interaction.customId.split('-').pop();
+  const isOP = interaction.user.id === opId;
+  const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.ManageThreads);
+
+  if (!isOP && !isAdmin) {
+    const embed = new EmbedBuilder()
+      .setColor(0xED4245)
+      .setDescription("❌ Only the thread creator or an admin can mark this post as resolved.");
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  // 1. Embed ping for OP/resolver
+  const pingEmbed = new EmbedBuilder()
+    .setColor(0x43B581)
+    .setDescription(`<@${opId}>, your thread has been marked as resolved by <@${interaction.user.id}>.`);
+
+  await interaction.channel.send({ embeds: [pingEmbed] });
+
+  // 2. Edit the embed and remove button
+  await interaction.update({
+    embeds: [
+      EmbedBuilder.from(interaction.message.embeds[0])
+        .setTitle('✅ Resolved')
+        .setColor(0x43B581)
+    ],
+    components: []
+  });
+
+  // 3. Lock the thread
+  if (interaction.channel && interaction.channel.isThread()) {
+    await interaction.channel.setLocked(true, 'Marked as resolved');
+  }
+}
+
     // === MODAL HANDLERS ===
     if (interaction.isModalSubmit()) {
       // /embed command modals (leave as is)
