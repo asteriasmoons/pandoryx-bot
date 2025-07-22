@@ -32,6 +32,7 @@ module.exports = (client) => {
     }
     // ===== AUTO-REACTION LOGIC ENDS HERE =====
 
+    // ===== BUMP REMINDER LOGIC =====
     // Ignore ALL bot messages except for Disboard bump tracking
     if (message.author.bot) {
       // ------ BUMP REMINDER LOGIC ------
@@ -40,6 +41,11 @@ module.exports = (client) => {
         // Fetch bump config for this guild
         const guildId = message.guild.id;
         const bumpConfig = await BumpReminder.findOne({ guildId });
+
+        // === NEW: If reminders are disabled, skip all tracking and confirmation ===
+        if (bumpConfig && bumpConfig.reminderDisabled) {
+          return;
+        }
 
         // Proceed ONLY if:
         // 1. There's a bump config with a set channel
@@ -79,7 +85,7 @@ module.exports = (client) => {
       }
       // Ignore all other bots
       return;
-    }
+    } // ===== END BUMP REMINDER LOGIC =====
 
     // ------ AUTODELETE LOGIC STARTS HERE ------
     // If this channel is configured for autodelete, schedule message deletion
