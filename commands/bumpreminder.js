@@ -62,6 +62,11 @@ module.exports = {
       sub
         .setName("disable")
         .setDescription("Disable all bump reminders for this server")
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("enable")
+        .setDescription("Enable bump reminders for this server")
     ),
 
   async execute(interaction) {
@@ -178,9 +183,26 @@ module.exports = {
           new EmbedBuilder()
             .setTitle("Bump Reminders Disabled")
             .setDescription(
-              "All bump reminders are now **disabled** for this server. You can re-enable by changing any setting."
+              "All bump reminders are now **disabled** for this server. You can re-enable by using `/bumpreminder enable`."
             )
             .setColor(0xff5555),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === "enable") {
+      reminder.reminderDisabled = false;
+      await reminder.save();
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("Bump Reminders Enabled")
+            .setDescription(
+              "Bump reminders are now **enabled** for this server. All settings remain as previously configured."
+            )
+            .setColor(0x57f287),
         ],
         ephemeral: true,
       });
