@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const BumpReminderSchema = new mongoose.Schema({
-  guildId: String,
+  guildId: { type: String, required: true, unique: true }, // <--- now unique!
   channelId: String,
   lastBump: Date,
   reminderTitle: { type: String, default: "Time to Bump!" },
@@ -13,5 +13,8 @@ const BumpReminderSchema = new mongoose.Schema({
   reminderSent: { type: Boolean, default: false },
   reminderDisabled: { type: Boolean, default: false }, // <--- Added
 });
+
+// (Optional: Ensure index is created in MongoDB for old collections)
+BumpReminderSchema.index({ guildId: 1 }, { unique: true });
 
 module.exports = mongoose.model("BumpReminder", BumpReminderSchema);
