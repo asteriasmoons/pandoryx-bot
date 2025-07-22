@@ -57,11 +57,15 @@ module.exports = {
             .setDescription("Role to ping (or choose 'none' to remove ping)")
             .setRequired(true)
         )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("disable")
+        .setDescription("Disable all bump reminders for this server")
     ),
 
   async execute(interaction) {
     // ==== PERMISSION CHECK ====
-    // Replace 'ManageMessages' with your needed permission
     if (!interaction.member.permissions.has("ManageMessages")) {
       const embed = new EmbedBuilder()
         .setColor(0xff5555)
@@ -160,6 +164,23 @@ module.exports = {
               `I'll ping <@&${role.id}> when sending bump reminders in this server.`
             )
             .setColor(0x72bdda),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === "disable") {
+      reminder.reminderDisabled = true;
+      await reminder.save();
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("Bump Reminders Disabled")
+            .setDescription(
+              "All bump reminders are now **disabled** for this server. You can re-enable by changing any setting."
+            )
+            .setColor(0xff5555),
         ],
         ephemeral: true,
       });

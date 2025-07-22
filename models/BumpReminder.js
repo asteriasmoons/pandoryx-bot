@@ -11,6 +11,7 @@ const BumpReminderSchema = new mongoose.Schema({
   },
   pingRoleId: { type: String, default: null },
   reminderSent: { type: Boolean, default: false },
+  reminderDisabled: { type: Boolean, default: false }, // <--- Added
 });
 
 module.exports = mongoose.model("BumpReminder", BumpReminderSchema);
